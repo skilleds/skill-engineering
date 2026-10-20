@@ -31,7 +31,8 @@ explícito (anti-takeover); **nudge de email secundário**.
 ## 3. Fatores (≥2 sempre) — SEM muro pré-login
 - **A conta nasce com 2FA baseline: senha + Email OTP** (always-on, Resend, entregue de verdade — não
   só no log). Isso **já é 2FA de verdade** e dá **acesso baseline pleno desde o cadastro**.
-- **Passkey/WebAuthn é NÚCLEO** (fluxo real de registro+asserção, não só o label AAL); TOTP (segredo
+- **Passkey/WebAuthn é o método PADRÃO e entra na FASE 0** (piso 21; passwordless-first; fluxo real de registro+asserção antes de qualquer feature, não só o label AAL); testes obrigatórios na fase 0: registro, login, challenge reutilizado, origin/rpId errado e credencial revogada rejeitados. Pré-condição do `GATE F0`.
+- Demais fatores: TOTP (segredo
   cifrado at-rest) e push; **Twilio** p/ telefone; providers **plugáveis**.
 - **Senha por padrão** (argon2id + HIBP), marcável como opcional no seletor de modos.
 - **Fator forte é INCENTIVADO (nudge) e exigido JUST-IN-TIME (step-up) só em operação sensível** — e
@@ -45,6 +46,9 @@ explícito (anti-takeover); **nudge de email secundário**.
 **Identidade global, papéis por tenant** (membership). Motor **ReBAC (OpenFGA/SpiceDB)**, tuplas
 `(objeto, relação, usuário)`; **RBAC granular** (`recurso:ação`) + **ABAC** (conditional tuples).
 **PDP/PEP separados, deny-default, enforcement server-side, token fino, decisão auditada.**
+
+## 4b. Matriz de acesso por rota (piso 20)
+Toda rota do auth e dos consumidores nasce com teste das 4 personas (anônimo, não privilegiado, privilegiado, burlas) afirmando status **e** corpo; deny-by-default; inventário derivado, M == N (`schematize-qa`, `check-route-authz.sh`). O `GATE F6` parte dessa matriz.
 
 ## 5. Sessão / logout
 **Multi-dispositivo** + view de remover + "sair de todos". **Sessão 7 dias padrão; 90 dias se

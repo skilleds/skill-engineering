@@ -12,6 +12,7 @@ combinando o checker determinístico com seu julgamento.
      `tenant_id` do body, JWT sem validar, `Math.random` pra token, catch que engole
      erro, teste silenciado, etc.
    - **Pisos de código (`padroes-codigo.md`):** arquivo >750 linhas (ou >~500 úteis) → bloqueia; >300 úteis (~400 obs) → flag; função sem doc-comment (o quê + onde).
+   - **Pisos 20 e 21:** rota nova sem linha na matriz de acesso (4 personas, status e corpo, M == N) ou rota pública fora da allowlist → BLOQUEIA; projeto sem passkey real na fase 0 (registro, login, challenge reutilizado, origin/rpId errado, credencial revogada) → BLOQUEIA.
    - **§39:** o índice de funcionalidades foi atualizado no mesmo PR?
    - **§3:** backend novo em Node/PHP? (proibido).
 3. Produza um relatório com `BLOQUEIA` (viola piso/DoD) e `ATENÇÃO` (melhorar),

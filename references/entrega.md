@@ -89,6 +89,7 @@ Uma task está pronta quando, cumulativamente:
 - [ ] Testes passam (unit + integration), cobertura nos mínimos
 - [ ] Caminhos críticos com testes explícitos
 - [ ] **Teste emulado (`simulated`) executado — 100% das rotas do inventário acessíveis pra quem deve e bloqueadas pra quem não deve; rota fantasma/morta = bloqueio (skill `schematize-qa`)**
+- [ ] **Matriz de acesso por rota (piso 20): toda rota do inventário com teste das 4 personas (anônimo, não privilegiado, privilegiado, burlas) afirmando status E corpo, deny-by-default, allowlist de rotas públicas com dono, gate M == N verde (skill `schematize-qa`, `check-route-authz.sh`)**
 - [ ] **Pentest de entrada limpo: sem `500`, sem coerção de tipo, sem eco não-escapado, sem vazamento cross-tenant (skill `schematize-pentest`)**
 - [ ] Lint, fmt, security scan limpos
 - [ ] **Nenhum item da §37 (anti-padrões vetados) presente no diff**
@@ -105,7 +106,7 @@ Uma task está pronta quando, cumulativamente:
 - [ ] Feature flag configurada (se aplicável)
 - [ ] CODEOWNERS aplicável revisou
 
-> Os itens em negrito são **bloqueantes absolutos**: archive (§28), ausência de macaquice (§37), teste emulado com rota 100% acessível (skill `schematize-qa`), **nenhum efeito externo real fora de prd** (`efeitos-externos.md`), e pentest de entrada limpo (skill `schematize-pentest`). Faltando qualquer um, a task **não está pronta** — independente de todo o resto estar verde. Smoke verde não basta: tem que ser smoke que **prova** conteúdo, não só status.
+> Os itens em negrito são **bloqueantes absolutos**: archive (§28), ausência de macaquice (§37), teste emulado com rota 100% acessível (skill `schematize-qa`), **matriz de acesso por rota verde (M == N)**, **nenhum efeito externo real fora de prd** (`efeitos-externos.md`), e pentest de entrada limpo (skill `schematize-pentest`). Faltando qualquer um, a task **não está pronta** — independente de todo o resto estar verde. Smoke verde não basta: tem que ser smoke que **prova** conteúdo, não só status.
 
 ---
 

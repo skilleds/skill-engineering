@@ -1,4 +1,4 @@
-<!-- schematize-core v0.29.0 -->
+<!-- schematize-core v0.30.0 -->
 # Núcleo schematize (sempre ativo)
 
 Vale para toda sessão, em qualquer diretório. A skill `schematize-engineering` é a base padrão da casa (agnóstica de linguagem; linguagem escolhida por fit + ADR) e deve ser aplicada ao projetar, revisar ou codar mesmo sem invocação explícita.
@@ -26,4 +26,10 @@ Vale para toda sessão, em qualquer diretório. A skill `schematize-engineering`
 ## Efeito externo
 - E-mail, pagamento e webhook real nunca saem de ambiente não-prd (domínio de teste em rota nula, sink por default).
 
-Detalhe: skill `schematize-engineering` (`assets/CLAUDE.md` pisos 13 e 19; `references/orquestracao.md` §9, §9.6, §9.7).
+## Rota exposta
+- Toda rota nasce com teste de matriz de acesso no CI (anônimo, não privilegiado, privilegiado, burlas; status e corpo; deny-by-default, M == N).
+
+## Passkey na fase 0
+- Passkey/WebAuthn é o método padrão e entra na fase 0, real ponta a ponta; mora no IAM da casa (`schematize-iam`).
+
+Detalhe: skill `schematize-engineering` (`assets/CLAUDE.md` pisos 13, 19, 20 e 21; `references/orquestracao.md` §9, §9.6, §9.7).

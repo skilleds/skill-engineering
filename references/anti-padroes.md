@@ -150,6 +150,9 @@ Prioridades, em ordem de desempate:
 20a. **Guarda que nunca foi vista falhar** (teste que passa verde sem nunca reprovar o caso ruim — a asserção casa com o vizinho/array/regex errado), **ou teste que o runner nem coleta** (fora do glob de `include` → não roda, não avisa).
     → **Red-first:** prove o vermelho antes do verde; confirme que o runner **enxerga** o arquivo (globs cobrem `.test.tsx`/`_test.go`/etc.) e falhe em "no tests found" (**schematize-qa**).
 
+20b. **Rota sem matriz de acesso** — endpoint/handler exposto sem teste das 4 personas (anônimo, não privilegiado, privilegiado, burlas), sem política declarada (deny-by-default) ou fora do inventário M == N; rota pública sem allowlist com justificativa e dono. É o bug recorrente "rota entregando dado sem autenticação".
+    → Piso 20: matriz no CI no nível unit, status **e** corpo, inventário derivado do código/spec, teste visto vermelho (**schematize-qa**, `check-route-authz.sh`; ofensivo: **schematize-pentest**).
+
 ### Dados e migrations
 
 21. **Migration sem `down`, ou destrutiva sem backup** (`DROP`/`ALTER` que perde dado).
@@ -227,6 +230,8 @@ Prioridades, em ordem de desempate:
 
 ### UX de massa (produto pro público — prever o usuário leigo)
 
+47a. **Passkey adiada ou só de rótulo** — projeto que começa por feature com senha e deixa passkey "pra depois", ou mapeia `"passkey" => AAL_HIGH` sem registro+asserção reais.
+    → Passkey/WebAuthn é o método padrão e entra na **fase 0** (piso 21): fluxo real e2e + testes de challenge reutilizado, origin/rpId errado e credencial revogada rejeitados (`iam-checklist.md` F0).
 48. **Culpar o usuário / exigir que ele saiba de internals / quebrar por invocação não-prevista.** Mensagem "você fez errado / rode sem `sudo` / configure o PATH / instale o rustup primeiro"; **instalar em `/root` porque rodou como root**; crashar por **PATH mínimo**, **toolchain ausente**, **dir com nome inesperado**, ordem "errada" de cliques, ou o usuário **fechar no meio** — qualquer caminho que um usuário leigo atinge tratado como **erro DELE**. É produto de massa: usuário insatisfeito = menos receita.
     → **Prever o usuário leigo ("prever macacos"):** o software **se adapta/conserta sozinho** — detecta o ambiente e faz o certo (rodou como root → **descobre o usuário real e instala pra ele**, nunca em `/root`; falta privilégio → **eleva sozinho** onde precisa; falta toolchain/dependência → **instala/configura**; dir/ordem/fechamento inesperado → **trata com graça**). Edge case que um leigo atinge = **BUG do software, não erro do usuário**. Nunca exija que o usuário saiba de internals (rustup, PATH, sudo, root, git). Mensagem de erro é **acionável e sem culpa** ("faço X pra você" > "você fez errado"). Vale pra **todo** software user-facing da casa (instaladores, CLIs, GUIs, onboarding). Piso na SKILL.md ("UX de massa — prever o usuário leigo").
 

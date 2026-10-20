@@ -2,6 +2,13 @@
 
 Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 com versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.30.0] — 2026-10-20
+### Adicionado
+- Pisos **20** (matriz de acesso por rota) e **21** (passkey na fase 0) em `assets/CLAUDE.md`; dois bullets no `CORE.md` (marcador v0.30.0).
+- Passkey na fase 0 e suas 5 provas como pré-condição do GATE F0 (`iam.md`, `iam-checklist.md`); herdado `iam-desenho` atualizado e sincronizado nas skills filhas.
+- DoD (`entrega.md`) e anti-padrões "20b. Rota sem matriz de acesso" e "47a. Passkey adiada"; `eng-iam`, `eng-review` e `eng-scan` atualizados.
+- Porquê: rota sem authn e login sem passkey eram falhas recorrentes.
+
 
 ## [0.29.0] — 2026-10-15
 Skill só carrega sob demanda; em máquina nova o agente ignorava a orquestração com subagents. Nasce o núcleo sempre-on.

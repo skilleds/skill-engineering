@@ -102,6 +102,7 @@ segurança: operação sensível exige fator forte; email/SMS servem de fallback
 - **Senha por padrão, opcional por escolha:** o usuário **cria senha no cadastro** (padrão
   cultural; **argon2id** + verificação contra base de vazadas/HIBP), mas o **seletor de
   modos de autenticação permite marcá-la como opcional** e viver de passkey/OTP/app.
+- **Passkey/WebAuthn é o método PADRÃO e entra na FASE 0** (passwordless-first; senha + Email OTP fica de fallback/2FA baseline; ≥2 fatores e recuperação ≥ login permanecem). Pré-condição do `GATE F0`: registro e asserção reais e2e + testes de challenge reutilizado, origin/rpId errado e credencial revogada rejeitados. O app cliente só integra via OIDC/PKCE + passkey (`schematize-web` `/web-iam`, `schematize-mobile` `/mobile-auth`).
 - **Passkey/WebAuthn é núcleo** (não roadmap): já é "2 fatores num" (dispositivo +
   biometria), phishing-resistant.
 - **2FA por desenho desde o cadastro — senha + Email OTP JÁ é 2FA (fraco, porém válido):**
@@ -346,6 +347,7 @@ nunca é fixa.
 - [ ] Auth é **app separada** (`auth.<domain>`, serviço + front próprios, isolados) — não monolith.
 - [ ] **ID interno imutável**; email/telefone não são ID; múltiplos emails suportados.
 - [ ] **2FA baseline por desenho** (senha + Email OTP = 2FA desde o cadastro); passkey no núcleo; email OTP (Resend) always-on; Twilio p/ telefone.
+- [ ] **Passkey padrão na FASE 0:** registro + asserção reais e2e antes de qualquer feature; testes de challenge reutilizado, origin/rpId errado e credencial revogada (todos rejeitados).
 - [ ] **Envio real só em `prd`:** provider default = **sink** fora de prd, **guard deny-by-default** no provider (destinatário fora do domínio de teste em rota nula → erro), **cap por execução**, chave sandbox em não-prd (`efeitos-externos.md`).
 - [ ] **Fator forte é incentivado (nudge) + just-in-time (step-up), NUNCA muro pré-login** — não se barra o acesso baseline por falta de fator forte (mata o círculo infinito).
 - [ ] Invariante de troca de fator (Y≠X, maior AAL); recuperação ≥ login; SSO com recuperação local.
