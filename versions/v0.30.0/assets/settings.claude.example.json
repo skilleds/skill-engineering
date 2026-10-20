@@ -1,0 +1,30 @@
+{
+  "_comment": "Exemplo. Copie para .claude/settings.json do projeto e ajuste caminhos. Os scripts ficam em .claude/hooks/. Defina PROJECT_ARCHIVE e (opcional) CTX_THRESHOLD no ambiente.",
+  "statusLine": {
+    "type": "command",
+    "command": "node .claude/hooks/context-monitor.mjs"
+  },
+  "hooks": {
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/hooks/precompact-backup.mjs"
+          }
+        ]
+      }
+    ],
+    "_comment_overdev": "Modo OVERDEV (/eng-overdev): rejeita parada até o checklist fechar. INERTE quando não há .schematize/overdev/state.json com mode=active (o formato `state` KEY=VALUE segue aceito por compat) — seguro deixar registrado. Aponte pro overdev-stop.sh instalado (skill ou .claude/hooks/).",
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ~/.claude/skills/schematize-engineering/assets/hooks/overdev-stop.sh"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+slug = "engineering"
+name = "schematize-engineering"
+tag = "Base · Engenharia"
+status = "beta"
+order = 6
+current_version = "0.30.0"
+href = "/engineering"
+
+[descriptions]
+pt = "A base comum de engenharia da casa (agnóstica de linguagem): arquitetura/DDD, MAPA+grafo+endpoints, segurança, dados, observabilidade, operação/DoD/archive. As skills de linguagem a especializam."
+en = "The house's shared engineering base (language-agnostic): architecture/DDD, MAP+graph+endpoints, security, data, observability, delivery/DoD/archive. The language skills specialize it."
+es = "La base común de ingeniería de la casa (agnóstica de lenguaje): arquitectura/DDD, MAPA+grafo+endpoints, seguridad, datos, observabilidad, entrega/DoD/archivo. Las skills de lenguaje la especializan."

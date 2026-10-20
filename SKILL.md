@@ -1,7 +1,7 @@
 ---
 name: schematize-engineering
 metadata:
-  version: 0.29.0
+  version: 0.30.0
 description: >-
   Base normativa de engenharia, agnóstica. Use ao projetar, revisar ou refatorar software, escolher linguagem do rol (fit + ADR), modelar eventos/banco, ou rodar scan, plan, overdev e archive.
 ---
@@ -10,7 +10,7 @@ description: >-
 
 Conjunto normativo que rege como software é projetado, construído, testado e operado aqui. Esta é a **base comum, agnóstica de linguagem** — o que se repete em toda a stack. As skills irmãs **especializam** esta base por contexto (linguagem, web, mobile, QA, pentest etc.); o catálogo completo, com o prefixo de comando de cada uma, é o `/schematize-help`. Use esta quando o projeto não é de uma linguagem específica, ou quando quer só os princípios da casa; use a irmã de linguagem quando há stack definida.
 
-**Versão:** skill `schematize-engineering` v0.29.0. Changelog em `CHANGELOG.md`.
+**Versão:** skill `schematize-engineering` v0.30.0. Changelog em `CHANGELOG.md`.
 
 ## Comandos (Claude Code)
 

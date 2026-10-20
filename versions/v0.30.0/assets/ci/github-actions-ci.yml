@@ -1,0 +1,49 @@
+# schematize-engineering — workflow de CI de referência (§13, §21, §35; testes/Q.A. na skill schematize-qa).
+# Copie para .github/workflows/ci.yml e ajuste <projeto>/comandos da sua stack.
+name: ci
+on:
+  pull_request:
+  push: { branches: [main] }
+
+jobs:
+  standards-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with: { fetch-depth: 0 }
+      - name: Gate de padrões (DoD/§37) no diff
+        run: bash .claude/skills/schematize-engineering/scripts/check-diff.sh "origin/${{ github.base_ref || 'main' }}"
+      - name: Índice de microfunções atualizado (§39)
+        env:
+          # Sem estes dois o gate NAO roda — e nao rodar REPROVA. Gate desarmado em silencio
+          # ("|| true" + diff comentado) foi o achado A5 da vistoria de 2026-08-21.
+          INDEX_SRC: ${{ vars.INDEX_SRC || './internal' }}
+          INDEX_FILE: ${{ vars.INDEX_FILE }}
+        run: bash .claude/skills/schematize-engineering/scripts/check-index.sh
+      - name: Scan de segredo no archive (§16.1/§32)
+        run: bash .claude/skills/schematize-engineering/scripts/archive-secret-scan.sh .
+      - name: Efeito externo não escapa de não-produção (§37, "Disparar efeito externo REAL a partir de não-produção")
+        env:
+          TEST_MAIL_DOMAIN: test.<domain>   # ajuste; o gate confere o null MX por dig
+        run: bash .claude/skills/schematize-engineering/scripts/check-external-effects.sh .
+
+  test-kit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: "Smoke + security + authz + hardening (PR — testes/Q.A.: schematize-qa)"
+        run: |
+          # <projeto> test smoke && <projeto> test security && <projeto> test authz && <projeto> test hardening
+          echo "ligue ao CLI <projeto>_ops aqui"
+      - name: Smoke self-check (anti verde-mentiroso — schematize-qa)
+        run: bash .claude/skills/schematize-qa/scripts/smoke-selfcheck.sh --self-check
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Trivy fs
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with: { scan-type: fs, severity: HIGH,CRITICAL, exit-code: '1' }
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
