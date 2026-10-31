@@ -30,6 +30,9 @@ jobs:
         env:
           SKIP_GIT: "1"   # no CI o checkout é destacado; HEAD==origin vale local/overdev
         run: bash .claude/skills/schematize-engineering/scripts/check-deploy-git.sh .
+      - name: Ritmo de registro (piso 26) — OPCIONAL; só vale em sessão ativa, ative com a variável RITMO_ARCHIVE
+        if: ${{ vars.RITMO_ARCHIVE != '' }}
+        run: bash .claude/skills/schematize-engineering/scripts/check-ritmo.sh "${{ vars.RITMO_ARCHIVE }}"
 
   test-kit:
     runs-on: ubuntu-latest

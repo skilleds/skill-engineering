@@ -14,6 +14,7 @@ como foco.
 3. Escreva `<ts>-checklist.md`: `## FEITO` (detalhado, pra não refazer), `## EM
    ABERTO / A FAZER` (próximo passo concreto + arquivo + critério de pronto),
    `## NÃO REFAZER` (becos descartados e porquê).
-4. Confirme os dois caminhos. **Não rode `/compact`** — este comando só arquiva.
+4. Atualize `ultimo_handoff` (ISO-8601) em `<projeto>_archive/.ritmo.json` (piso 26) e commite+push.
+5. Confirme os dois caminhos. **Não rode `/compact`** — este comando só arquiva.
 
 Regras: armazene SEMPRE em `<projeto>/<projeto>_archive` (§28). Sem segredo/PII nos MDs (§16.1).

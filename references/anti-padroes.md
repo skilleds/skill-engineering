@@ -253,6 +253,13 @@ Prioridades, em ordem de desempate:
 54. **Ops sem guardrail ou sem auditoria** — operação livre, sem allowlist/dry-run/confirmação/teto de blast radius, sem identidade do chamador, sem log append-only, sem kill-switch/rollback; ou ops tão pobre que a IA "precisa" do `ssh`.
     → Guardrails e log de auditoria do `ops.md` §8.3/§8.4 **e** catálogo de leitura/escrita completo (§8.2).
 
+### Orquestração e ritmo (pisos 25 e 26)
+
+55. **Agent ocioso acumulado** — subagents idle "por precaução", entregues e revisados mas vivos, ou à espera de outro agent; onda fechada sem inventário (`ListAgents`).
+    → Descarte imediato por critério (entregou/falhou/sem pendência/depende de outro; `orquestracao.md` §9.6); o estado mora no archive, não no agent (piso 25).
+56. **Sessão longa sem relatório/handoff** — horas de trabalho ativo sem `relatorios/*.md`, sem handoff, `.ritmo.json` ausente ou vencido; fim de sessão sem handoff.
+    → Relatório a cada 30 min e handoff a cada 6 h/fim de sessão, antes da próxima entrega, commitados (piso 26; `orquestracao.md` §9.8; `check-ritmo.sh`).
+
 > Regra de bolso: se a justificativa começa com "só pra funcionar", "depois eu arrumo", ou "é mais rápido assim" e o resultado mexe em segredo, auth, dado, registro, **ou toca o servidor por fora do fluxo/ops** — **provavelmente é uma macaquice desta lista. Para e faz certo.**
 
 ---

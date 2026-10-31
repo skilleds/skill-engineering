@@ -2,6 +2,22 @@
 
 Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 com versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.32.0] — 2026-10-31
+### Adicionado
+- Piso **25** (sem agents inúteis acumulados: descarte por critério — entregou e revisado, falhou e substituído, sem pendência, depende de outro; inventário `ListAgents` ao fim de cada onda) e piso **26** (ritmo de registro: relatório a cada 30 min em `<projeto>_archive/relatorios/AAAA-MM-DD_HHMM.md`, handoff a cada 6 h e em fim de sessão/marco/compact, carimbos em `<projeto>_archive/.ritmo.json`) em `assets/CLAUDE.md`.
+- `CORE.md` (marcador v0.32.0): seções "Sem agents inúteis" e "Ritmo: relatório 30 min · handoff 6 h"; linha final cobre pisos 13, 19-26.
+- `references/orquestracao.md`: §9.6 reforçado (inventário de agents vivos, critérios de descarte) e nova §9.8 "Ritmo de registro" (formato do relatório, handoff e gatilhos, `.ritmo.json`, quem gera, retomada com marca vencida).
+- DoD (`entrega.md` §35) e anti-padrões 55 (agent ocioso acumulado) e 56 (sessão longa sem relatório/handoff).
+- `scripts/check-ritmo.sh` (+ teste, `--agora` injetável), plugado de forma opcional no CI template (variável `RITMO_ARCHIVE`).
+- Comando `/eng-report` (relatório de ritmo); `/eng-handoff` passa a atualizar `ultimo_handoff`.
+- Porquê: agents ociosos acumulavam e sessões longas não deixavam trilha auditável nem ponto de retomada.
+
+### Pendência
+- App `schematize` (hook Stop + timer) deve **automatizar o disparo** do relatório de 30 min e do handoff de 6 h (contando só trabalho ativo, ociosidade > 15 min descontada) e rodar `check-ritmo.sh`; hoje o disparo depende do agente seguir o piso. Idem integrar `/eng-report` e `/eng-handoff` ao timer.
+
+### Mantido (piso inalterado)
+- Pisos 1-24 sem alteração de regra.
+
 ## [0.31.0] — 2026-10-31
 ### Adicionado
 - Pisos **22** (tudo vai pro git; trava de conclusão: remote acessível + `git status` limpo + `HEAD == origin`), **23** (deploy SOMENTE do git; vetado scp/rsync/tar|ssh/docker save|load/bundle/edição remota/patch colado) e **24** (o ops é o gate da IA; a IA nunca muda a VPS direto nem escreve SQL/script/comando mutável) em `assets/CLAUDE.md`; pisos 14/15/16 apontam para eles. Três seções no `CORE.md` (marcador v0.31.0).

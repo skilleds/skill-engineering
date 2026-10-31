@@ -10,7 +10,7 @@ description: >-
 
 Conjunto normativo que rege como software é projetado, construído, testado e operado aqui. Esta é a **base comum, agnóstica de linguagem** — o que se repete em toda a stack. As skills irmãs **especializam** esta base por contexto (linguagem, web, mobile, QA, pentest etc.); o catálogo completo, com o prefixo de comando de cada uma, é o `/schematize-help`. Use esta quando o projeto não é de uma linguagem específica, ou quando quer só os princípios da casa; use a irmã de linguagem quando há stack definida.
 
-**Versão:** skill `schematize-engineering` v0.31.0. Changelog em `CHANGELOG.md`.
+**Versão:** skill `schematize-engineering` v0.32.0. Changelog em `CHANGELOG.md`.
 
 ## Comandos (Claude Code)
 
@@ -23,6 +23,7 @@ Digite `/eng-help` pra ver todos. Em resumo:
 | `/eng-load` | carrega à força TODO o corpo normativo no contexto e passa a aplicá-lo como regra inegociável |
 | `/eng-claude` | cria/atualiza (sobrescreve, com backup) o `CLAUDE.md` da raiz com a versão atual da skill |
 | `/eng-cc` | context compact: gera context.md + checklist.md no archive e roda `/compact` |
+| `/eng-report` | gera o relatório de 30 min em `<projeto>_archive/relatorios/` e atualiza `.ritmo.json` (piso 26) |
 | `/eng-handoff` | gera o handoff (context.md + checklist.md) **sem** compactar — pra fim de sessão |
 | `/eng-review` | roda o gate da DoD/§37 no diff (arquivo >750 bloqueia / >300 úteis flag, função sem doc, índice, macaquices) |
 | `/eng-scan` | **varredura ampla** de problemas na base inteira (correção, anti-padrões, pisos, duplicação/morto, testes, concorrência, dados, supply chain, dívida, deriva de índice) — exaustiva, com fan-out; cada achado com `arquivo:linha`+severidade+conserto |
@@ -119,6 +120,7 @@ A engineering mantém **só o piso mínimo**, delegando o COMO pra lá:
 Não escreva do zero o que já está bundlado:
 
 - **Andaime de TESTE movido** → skill **`schematize-qa`** (`scripts/`): `lib.sh` (helpers), `test-skeleton.sh` (esqueleto de `tests/<mode>/<name>.sh`), `smoke-selfcheck.sh` (meta-teste anti "verde mentiroso"), `simulated/run.py` (engine rotas × personas × injections). Não estão mais aqui — use os da `schematize-qa`.
+- `scripts/check-ritmo.sh` — **gate do piso 26**: falha se `<archive>/.ritmo.json` faltar ou se o último relatório tiver > 30 min / o último handoff > 6 h (`--agora` para teste). Opcional no CI. Teste: `check-ritmo.test.sh`.
 - `scripts/check-deploy-git.sh` — **gate dos pisos 22/23**: falha se `scp`/`rsync` para host remoto ou `tar|ssh` aparecerem em scripts de deploy/CI, e (em repo git) se não há remote, a árvore está suja ou há commits por empurrar. Teste: `check-deploy-git.test.sh`.
 - `scripts/check-external-effects.sh` — **gate do piso de efeito externo** (§37, *"Disparar efeito externo REAL a partir de não-produção"*): trava se achar endereço de caixa real (`@gmail.com` etc.) em test/seed/fixture/persona, credencial de provedor de envio em `.env` de não-prd que não seja sandbox, envio sem cap por execução, ou (com `TEST_MAIL_DOMAIN` + `dig`) domínio de teste **sem null MX**. Já plugado no `assets/ci/github-actions-ci.yml`.
 - `scripts/hooks/context-monitor.mjs` + `scripts/hooks/precompact-backup.mjs` — gestão de contexto no Claude Code: detectam o limite de handoff (default 250k) e fazem backup automático em `<projeto>/<projeto>_archive` antes da compactação. Ver `references/contexto-claude-code.md` e `assets/settings.claude.example.json`.

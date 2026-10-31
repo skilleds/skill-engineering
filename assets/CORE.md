@@ -1,4 +1,4 @@
-<!-- schematize-core v0.31.0 -->
+<!-- schematize-core v0.32.0 -->
 # Núcleo schematize (sempre ativo)
 
 Vale para toda sessão, em qualquer diretório. A skill `schematize-engineering` é a base padrão da casa (agnóstica de linguagem; linguagem escolhida por fit + ADR) e deve ser aplicada ao projetar, revisar ou codar mesmo sem invocação explícita.
@@ -12,7 +12,12 @@ Vale para toda sessão, em qualquer diretório. A skill `schematize-engineering`
 - O agent principal só planeja, decompõe, despacha, supervisiona e revisa; não escreve código de entrega.
 - Executor = o mais barato que resolve: `haiku` no mecânico, `sonnet` no código, escada do §9.3 se falhar, `opus` só após falha, com motivo.
 - Ação onerosa vira micro-tasks. O principal revisa toda entrega (diff + gate).
-- Sem frota ociosa: idle com pendência volta ao trabalho; dependente de outro agent é morto e enfileirado; terminou, é morto (§9.6).
+
+## Sem agents inúteis
+- Agent entregue e revisado, falho e substituído, sem pendência ou dependente de outro: **morto** (dependente é enfileirado com gatilho). Nunca idle "por precaução". Fim de onda: `ListAgents` e encerra os sem pendência (§9.6).
+
+## Ritmo: relatório 30 min · handoff 6 h
+- Trabalho ativo (ocioso >15 min não conta): relatório a cada 30 min em `<projeto>_archive/relatorios/AAAA-MM-DD_HHMM.md`; handoff a cada 6 h e em fim de sessão/marco. Carimbos em `<projeto>_archive/.ritmo.json`. Vencido: gera antes da próxima entrega, commita, não pergunta (§9.8).
 
 ## Mídia e imagem nunca pelo Claude
 - Detecte Codex/Gemini e **pergunte ao usuário** qual usar. API de imagem paga é proibida. Detalhe: skill `schematize-models`.
@@ -39,4 +44,4 @@ Vale para toda sessão, em qualquer diretório. A skill `schematize-engineering`
 ## Passkey na fase 0
 - Passkey/WebAuthn é o método padrão e entra na fase 0, real ponta a ponta; mora no IAM da casa (`schematize-iam`).
 
-Detalhe: skill `schematize-engineering` (`assets/CLAUDE.md` pisos 13, 19-24; `references/orquestracao.md` §9, §9.6, §9.7).
+Detalhe: skill `schematize-engineering` (`assets/CLAUDE.md` pisos 13, 19-26; `references/orquestracao.md` §9, §9.6, §9.7, §9.8).

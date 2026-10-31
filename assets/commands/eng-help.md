@@ -13,6 +13,7 @@ instalados em `.claude/commands/`):
 | `/eng-load` | **Carrega à força TODO o corpo normativo** (DDD/arquitetura, clean code, segurança, dados, testes, operação) no contexto e passa a aplicá-lo no projeto como regra inegociável. |
 | `/eng-claude` | Cria ou **atualiza (sobrescreve)** o `CLAUDE.md` da raiz com a versão atual da skill (backup se houver customização local). |
 | `/eng-cc` | Context compact: gera `context.md` + `checklist.md` em `<projeto>/<projeto>_archive/context/` e roda `/compact`. |
+| `/eng-report` | Relatório de ritmo (30 min) em `<projeto>_archive/relatorios/` + `.ritmo.json` (piso 26). |
 | `/eng-handoff` | Gera o handoff (`context.md` + `checklist.md`) **sem** compactar — ideal pra fim de sessão ou troca de tarefa. |
 | `/eng-review` | Roda o gate da Definition of Done e dos anti-padrões (§35, §37): arquivo >750 linhas bloqueia / >300 úteis flag, função sem doc-comment, índice desatualizado, macaquices de segurança. |
 | `/eng-scan` | **Varredura ampla** de problemas na base inteira (correção, anti-padrões, pisos de código (`references/padroes-codigo.md`), duplicação/morto, testes, concorrência, dados/API, supply chain, dívida, deriva de índice) — exaustiva por inventário, com fan-out; achado com `arquivo:linha`+severidade+conserto. |

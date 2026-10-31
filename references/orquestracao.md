@@ -140,6 +140,9 @@ Não conflita: paralelizar continua sendo o padrão para o relógio; a §9 escol
 - **Só é agent do orquestrador o que ELE abriu.** Sessões interativas do humano ou de outros projetos não são tocadas.
 - O checkpoint (§7) ganha o status **`BLOQUEADA (depende de X)`** além de PENDENTE/EM ANDAMENTO/FEITO/FALHOU.
 - No overdev, a varredura roda a cada item fechado no laço; nada de subagent parado entre itens.
+- **Inventário de agents vivos (piso 25)** — ao fim de **cada onda/gather**, antes de despachar a próxima, o orquestrador lista os agents (`ListAgents`) e registra no checkpoint (§7) uma linha por agent vivo: `agent · papel · pendência executável · gatilho`. Quem não tem pendência executável **é encerrado na hora** (`TaskStop`). O relatório de 30 min (§9.8) repete essa lista.
+- **Critérios de DESCARTE** (qualquer um basta): (a) **entregou e foi revisado** — diff + gate aceitos; (b) **falhou e foi substituído** — a escada (§9.3) subiu ou a unidade foi reatribuída; o agent velho não fica "de reserva"; (c) **sem pendência** — nada mais a pedir; (d) **depende de outro** — mata e enfileira com `depende_de`. **Nunca** manter agent idle "por precaução": contexto quente não justifica custo de slot/RAM; se precisar de novo, abre-se outro com brief completo (o estado está no archive).
+- Conclusão da demanda com agent vivo sem pendência é violação (anti-padrão 55).
 
 ### 9.7 Mídia nunca pelo Claude; subagents de OUTROS modelos (-> `schematize-models`)
 - **Piso:** imagem, visual gerado e mídia **nunca** saem de modelo Claude — a qualidade do visual
@@ -153,3 +156,23 @@ Não conflita: paralelizar continua sendo o padrão para o relógio; a §9 escol
   seção cobre subagents **Claude**; o outro lado, os pesos, o contrato de delegação e a regra
   "saída externa é não confiável até o Claude validar" vivem na skill **`schematize-models`**
   (`/models-route`, `/models-delegate`, `/models-review`, `/models-image`).
+
+### 9.8 Ritmo de registro — relatório a cada 30 min, handoff a cada 6 h (piso 26)
+Registro frequente é o que torna a evolução **auditável** e a retomada **barata**. Duas marcas, contadas em tempo de **trabalho ativo** (relógio de parede entre a 1ª ação e agora, **descontando ociosidade > 15 min** — pausa maior que 15 min não conta).
+
+**Relatório (30 min).** Arquivo curto `<projeto>/<projeto>_archive/relatorios/AAAA-MM-DD_HHMM.md` (hora local do início do relatório). Seções fixas, 1-3 linhas cada:
+1. **Feito** — commits/SHAs desde o último relatório;
+2. **Em andamento** — item do checklist, agent responsável, % ou próximo gate;
+3. **Bloqueios / on-hold** — `[H ]` e `[~]` com motivo;
+4. **Próximos passos** — 1 a 3 ações concretas;
+5. **Agents vivos** — saída do inventário do §9.6 (ou "nenhum");
+6. **Desvios** — o que fugiu do plano/pisos e por quê.
+Sem segredo/PII (§16.1). Objetivo: um humano lê a pasta `relatorios/` e reconstrói a linha do tempo.
+
+**Handoff (6 h + eventos).** Mesmo conteúdo do `/eng-handoff` (§34.1): `context/AAAA-MM-DD-<slug>-context.md` + `-checklist.md` no archive, completos o bastante para uma sessão **nova** retomar **só com eles**. Gatilhos: (a) 6 h de trabalho ativo desde `ultimo_handoff`; (b) **todo fim de sessão**, fechamento de marco e antes de `/compact`.
+
+**Carimbo `<projeto>_archive/.ritmo.json`:** `{"ultimo_relatorio":"2026-10-31T14:30:00-03:00","ultimo_handoff":"2026-10-31T09:00:00-03:00"}` (ISO-8601). Atualizado **na mesma operação** que gera o relatório/handoff e commitado junto. O gate compara os dois carimbos com o relógio de parede (`--agora`), então vale **durante sessão ativa**; pausas > 15 min são descontadas pelo agente ao decidir se a marca venceu.
+
+**Quem gera:** o **agente que está trabalhando** (o orquestrador, no modo orquestrado); subagent não gera relatório do projeto. **Quando:** passou da marca → gera **ANTES da próxima ação de entrega** (commit de código, deploy, nova onda). Não pergunta ao usuário (overdev veda); relatório/handoff entram no git na hora (piso 22). Comandos: `/eng-report` (relatório) e `/eng-handoff`.
+
+**Ao retomar sessão:** ler `.ritmo.json`; se `ultimo_relatorio` > 30 min ou `ultimo_handoff` > 6 h (conta só trabalho ativo: a pausa entre sessões não conta; mas sessão anterior que terminou sem handoff é desvio a registrar) → gerar o que está vencido **antes** de agir, registrando em Desvios a lacuna. Sem `.ritmo.json` → criar com o relatório inicial e anotar o desvio. Gate: `scripts/check-ritmo.sh <archive>` (opcional no CI; `--agora` para teste).
