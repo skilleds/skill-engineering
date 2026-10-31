@@ -8,15 +8,15 @@
 # strict-ok: gate acumula achados e sai no fim (`schematize-shell` -> `references/piso.md` secao 1)
 set -uo pipefail
 D="${1:-.}"; rc=0
+TMP="$(mktemp)" || exit 1; trap 'rm -f "$TMP"' EXIT
 PAT='(^|[;&|[:space:]])(scp|rsync)[[:space:]][^#]*[[:alnum:]_.-]+@?[[:alnum:]_.-]*:[^[:space:]]|tar[[:space:]][^#]*\|[[:space:]]*ssh|docker[[:space:]]+(save|load)[^#]*(ssh|\|)'
 while IFS= read -r f; do
-  if grep -nE "$PAT" "$f" | grep -v 'check-deploy-git: ok' >/tmp/.cdg.$$ 2>/dev/null && [ -s /tmp/.cdg.$$ ]; then
-    echo "FAIL: $f envia código ao servidor fora do git (piso 23):"; sed 's/^/  /' /tmp/.cdg.$$; rc=1
+  if grep -nE "$PAT" "$f" | grep -v 'check-deploy-git: ok' >"$TMP" 2>/dev/null && [ -s "$TMP" ]; then
+    echo "FAIL: $f envia código ao servidor fora do git (piso 23):"; sed 's/^/  /' "$TMP"; rc=1
   fi
 done < <(find "$D" -type f \( -name '*.sh' -o -name '*.yml' -o -name '*.yaml' -o -name 'Makefile' -o -name 'justfile' \) \
   -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/versions/*' -not -path '*/references/*' \
   -not -name 'check-deploy-git*' 2>/dev/null)
-rm -f /tmp/.cdg.$$
 if [ -z "${SKIP_GIT:-}" ] && git -C "$D" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   [ -n "$(git -C "$D" remote -v)" ] || { echo "FAIL: sem remote (piso 22)"; rc=1; }
   [ -z "$(git -C "$D" status --porcelain)" ] || { echo "FAIL: árvore suja (piso 22)"; rc=1; }
