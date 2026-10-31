@@ -169,7 +169,7 @@ Registro frequente é o que torna a evolução **auditável** e a retomada **bar
 6. **Desvios** — o que fugiu do plano/pisos e por quê.
 Sem segredo/PII (§16.1). Objetivo: um humano lê a pasta `relatorios/` e reconstrói a linha do tempo.
 
-**Handoff (6 h + eventos).** Mesmo conteúdo do `/eng-handoff` (§34.1): `context/AAAA-MM-DD-<slug>-context.md` + `-checklist.md` no archive, completos o bastante para uma sessão **nova** retomar **só com eles**. Gatilhos: (a) 6 h de trabalho ativo desde `ultimo_handoff`; (b) **todo fim de sessão**, fechamento de marco e antes de `/compact`.
+**Handoff (6 h + eventos).** Mesmo conteúdo do `/eng-handoff` (§34.1): `context.md` + `checklist.md` (em `context/AAAA-MM-DD-<slug>-*`) no archive, completos o bastante para uma sessão **nova** retomar **só com eles**. Gatilhos: (a) 6 h de trabalho ativo desde `ultimo_handoff`; (b) **todo fim de sessão**, fechamento de marco e antes de `/compact`.
 
 **Carimbo `<projeto>_archive/.ritmo.json`:** `{"ultimo_relatorio":"2026-10-31T14:30:00-03:00","ultimo_handoff":"2026-10-31T09:00:00-03:00"}` (ISO-8601). Atualizado **na mesma operação** que gera o relatório/handoff e commitado junto. O gate compara os dois carimbos com o relógio de parede (`--agora`), então vale **durante sessão ativa**; pausas > 15 min são descontadas pelo agente ao decidir se a marca venceu.
 
