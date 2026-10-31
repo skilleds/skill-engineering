@@ -14,6 +14,7 @@ desenvolvimento local  →  teste local (verde)  →  GitHub (merge)  →  hml  
 
 - **Nada pula etapa.** Nunca vai direto pra hml ou prd. hml só recebe o que está no GitHub e passou no teste local; prd só recebe o que foi homologado em hml.
 - **VETADO editar código direto no servidor (hml/prd).** O servidor é **imutável por edição manual** — recebe apenas **artefato promovido do git** (mesma imagem/commit SHA, §21). "Editei direto no prd pra resolver rápido" é o anti-padrão que esta reference existe pra matar.
+- **Canal único de código = git (pisos 22/23).** **VETADO** `scp`, `rsync`, `tar | ssh`, `docker save | load`, `git bundle` ad-hoc, editar arquivo remoto e colar patch na VPS. Só o ops, **na VPS**, busca do remoto git (`fetch` + `checkout` de SHA/tag exato, verificado). Código não pushado não é deploy-ável.
 - **Hotfix segue o mesmo fluxo, acelerado:** branch → teste local → git → hml → prd. Urgência **não** autoriza mão no servidor.
 - **Precauções concretas:** deploy só aceita artefato com **proveniência git** (commit SHA); filesystem **read-only** em hml/prd; **drift detection** (o ops recusa/alerta divergência com o git); acesso de escrita = **exceção auditada** (break-glass no archive), nunca o fluxo.
 
@@ -39,7 +40,7 @@ Cada serviço roda **confinado**, pra que um comprometimento não vaze para os o
 
 **Toda** operação sobre o servidor — instalar, subir, atualizar, configurar, migrar, corrigir, reverter, diagnosticar — passa por um **comando do `<projeto>_ops`**. **Zero** exceção:
 
-- **Proibido** `ssh servidor` + comando ad-hoc, editar arquivo no servidor, `docker`/`kubectl`/`systemctl` na mão, script solto. Se **não existe** comando de ops pra aquilo, **cria o comando no ops** — não faz por fora. O que não está no ops não aconteceu (e não é reproduzível).
+- **Proibido** `scp`/`rsync`/`tar|ssh` de código para o servidor (piso 23), `ssh servidor` + comando ad-hoc, editar arquivo no servidor, `docker`/`kubectl`/`systemctl` na mão, script solto. Se **não existe** comando de ops pra aquilo, **cria o comando no ops** — não faz por fora. O que não está no ops não aconteceu (e não é reproduzível).
 - **Autonomia e completude (requisito, não meta):** o ops é uma **aplicação/CLI coesa, idempotente e autodescritiva** que instala e opera o sistema inteiro **sem depender da IA**. Um humano — o próprio usuário — provisiona um servidor **do zero** só com o ops. `ops install` sobe tudo; `ops redeploy` recria do seed; `ops doctor` diagnostica tudo.
 - **Superfície mínima** (idempotentes, com `--help` e saída machine-readable): `bootstrap` (cria `/<app>/` e clona os repos) · `install`/`up` · `redeploy` (destrutivo, do seed §2) · `update` · `config` (do `/<app>/.env`) · `migrate` (reversível) · `health`/`doctor` · `rollback` · `logs`/`troubleshoot` · `reset` (destrói dados — gated, dev/hml) · `test` (test kit — skill **schematize-qa**).
 - **Correção/hotfix é `ops update`/`ops redeploy`/`ops rollback`** — nunca mão no servidor (§1). O ops sobe com observabilidade integrada (§16) e **grava o archive** de cada operação (§28).
@@ -72,6 +73,40 @@ Se a instalação/subida **paralela falha** (race, porta/arquivo/lock disputado,
 | Paralelização (o análogo em execução do agente) | `references/orquestracao.md` |
 | Archive de cada operação | `operacao.md` §28 (`<projeto>/<projeto>_archive/`) |
 
+## 8. Contrato de gate da IA (pisos 22, 23 e 24)
+
+> O ops é a **única porta** da IA para a VPS. A IA pode delirar; por isso ela nunca tem mão direta, só operações nomeadas, tipadas e auditadas.
+
+### 8.1 Bootstrap (o único contato direto permitido)
+1. Atualizações automáticas do SO (`unattended-upgrades`/apt no Debian) — configuradas uma vez, sem a IA decidir pacote a pacote.
+2. Instalar o mínimo para rodar o ops (`git` e afins) e executar **`git clone` do repo do ops**. **Nada mais** por `ssh` direto.
+3. A partir daí: a IA invoca o ops (CLI/API local da VPS, autenticada, identidade `agent`); o ops clona/atualiza os demais repos do git (`/<app>/<app>_<ctx>`).
+
+### 8.2 Catálogo mínimo de capacidades do ops
+- **Leitura (rica e segura):** logs por serviço com filtro/tail · status/health · métricas · sistema (CPU/RAM/disco/rede/portas/processos/systemd) · versões (SHA em execução por serviço) · config renderizada **com segredo mascarado** · conexões · filas · jobs · diff/drift vs git · banco **somente-leitura** por **queries nomeadas e versionadas no git** (nunca SQL livre).
+- **Escrita (tipada):** deploy/redeploy (de SHA/tag) · rollback · restart · migrate (só migrations versionadas) · backup/restore · rotacionar segredo · reset (só dev/hml). Cada operação tem schema de parâmetros validado.
+
+### 8.3 Anatomia dos guardrails
+- **Allowlist de operações tipadas, deny-by-default**; parâmetro fora do schema é recusado.
+- **Dry-run/plan antes do apply**; o apply referencia o plano aprovado.
+- **Confirmação humana** para destrutivo/irreversível; o agente não se autoconfirma.
+- **Rate-limit e teto de blast radius** (nº de serviços/linhas/hosts por operação).
+- **Escopo por ambiente**: prd mais restrito que hml/dev.
+- **Identidade do chamador** (`agent` vs `human`) em toda chamada; permissões distintas.
+- **Kill-switch** que suspende toda escrita do agente; **rollback** para toda operação de escrita.
+- **Migrations só as versionadas no git**; a IA não passa SQL.
+
+### 8.4 Log de auditoria
+Append-only (fora do alcance do agente), uma linha por chamada: `quem` (identidade) · `quê` (operação) · `quando` · `parâmetros` (segredo mascarado) · `resultado` · `diff` (antes/depois, quando escreve) · `plano`/`confirmação` referenciados · `trace_id`. Sem linha de auditoria, a operação não aconteceu.
+
+### 8.5 Falta comando → implementa no repo do ops
+1. A IA percebe que a operação não existe; **não** contorna por `ssh`.
+2. Implementa o comando **no repo do ops** (tipado, com guardrails, teste e doc).
+3. Commit + push (piso 22) e review; 4. **deploy do próprio ops via ops/git** (piso 23); 5. só então usa o comando novo.
+
+### 8.6 Break-glass
+Acesso humano, auditado e registrado no archive, continua existindo. **Nunca para a IA.**
+
 Comando: **`/<slug>-ops`** (ex.: `/eng-ops`, `/go-ops`) — audita/scaffolda o ops, verifica o fluxo de ambientes, o layout `/<app>/` + seed, o isolamento por usuário, a paralelização (`nproc`) e a independência.
 
-> Regra de bolso: **nada toca o servidor fora do ops; nada chega ao servidor sem git + teste local; todo redeploy nasce do `/<app>/.env` (destrói a app, preserva os dados); cada serviço tem seu user.** Instalar é paralelo por padrão; se o paralelo quebra, o bug é de independência — a correção mais urgente que existe.
+> Regra de bolso: **nada toca o servidor fora do ops (a IA, nem com ssh); código só chega via git (nunca scp/rsync); nada chega ao servidor sem git + teste local; todo redeploy nasce do `/<app>/.env` (destrói a app, preserva os dados); cada serviço tem seu user.** Instalar é paralelo por padrão; se o paralelo quebra, o bug é de independência — a correção mais urgente que existe.

@@ -99,6 +99,8 @@ Uma task está pronta quando, cumulativamente:
 - [ ] OpenAPI atualizada (se for API)
 - [ ] Migration testada com rollback (se houver schema change)
 - [ ] **Nenhum efeito externo real fora de `prd` (se o projeto envia e-mail/SMS/push/webhook/cobrança):** provider default = sink, guard deny-by-default no provider (com teste que **vê a recusa**), cap por execução, endereços só no **domínio de teste em rota nula** (`references/efeitos-externos.md`; anti-padrão em `references/anti-padroes.md` §37, item *"Disparar efeito externo REAL a partir de não-produção"*)
+- [ ] **Remote existe, push feito, `HEAD == origin`, `git status` limpo (piso 22) — sem isso a task não conclui**
+- [ ] **Deploy (se houve) veio de SHA/tag do git, executado pelo ops na VPS; nenhum `scp`/`rsync`/`ssh` mutável da IA (pisos 23/24)**
 - [ ] Documentação atualizada (README, ADR, runbook se aplicável)
 - [ ] Smoke tests executados em staging **(com asserção de conteúdo e self-check anti verde-mentiroso — skill `schematize-qa`)**
 - [ ] CI verde, code review aprovado
@@ -106,7 +108,7 @@ Uma task está pronta quando, cumulativamente:
 - [ ] Feature flag configurada (se aplicável)
 - [ ] CODEOWNERS aplicável revisou
 
-> Os itens em negrito são **bloqueantes absolutos**: archive (§28), ausência de macaquice (§37), teste emulado com rota 100% acessível (skill `schematize-qa`), **matriz de acesso por rota verde (M == N)**, **nenhum efeito externo real fora de prd** (`efeitos-externos.md`), e pentest de entrada limpo (skill `schematize-pentest`). Faltando qualquer um, a task **não está pronta** — independente de todo o resto estar verde. Smoke verde não basta: tem que ser smoke que **prova** conteúdo, não só status.
+> Os itens em negrito são **bloqueantes absolutos**: archive (§28), ausência de macaquice (§37), teste emulado com rota 100% acessível (skill `schematize-qa`), **matriz de acesso por rota verde (M == N)**, **nenhum efeito externo real fora de prd** (`efeitos-externos.md`), **remote + push + HEAD == origin** (piso 22), **deploy só do git via ops** (pisos 23/24), e pentest de entrada limpo (skill `schematize-pentest`). Faltando qualquer um, a task **não está pronta** — independente de todo o resto estar verde. Smoke verde não basta: tem que ser smoke que **prova** conteúdo, não só status.
 
 ---
 

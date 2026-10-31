@@ -240,6 +240,19 @@ Prioridades, em ordem de desempate:
 49. **Disparar efeito externo REAL a partir de não-produção** — teste/seed/carga/demo mandando e-mail de verdade; endereço sintético em domínio de terceiro (`@gmail.com`, `@hotmail.com`, domínio do cliente) ou de pessoa real (**inclusive o seu**); provedor real ligado por default em dev/hml; chave de **produção** do provedor no seed de não-prd; envio **sem teto por execução**. Sintoma real: um laço de teste que criou milhares de contas disparou **>5.000 e-mails** para endereços inexistentes — **hard bounce e spam trap em massa**, reputação de IP/domínio queimada, custo real e utilidade **zero**. O dano é assimétrico: reputação queimada derruba o e-mail **transacional de produção** — inclusive o **OTP de login** (`iam.md` §3) — e leva **semanas de warm-up** pra voltar. Não tem undo.
     → **Sandbox por construção, não por lembrança** (`references/efeitos-externos.md`): **(1)** endereço sintético só no **domínio de teste em ROTA NULA** (`test.<domain>` com **null MX (RFC 7505) + SPF `-all` + DMARC `p=reject`**) ou TLD reservado (`.test`/`.invalid`/`.example`); **(2)** provider **default = SINK** (Mailpit/log) fora de prd, com **guard deny-by-default DENTRO do provider** (destinatário externo + `env != prd` → **erro**; config ausente → assume não-prd, fail-closed); **(3)** **cap por execução** + circuit breaker que **aborta**; **(4)** chave **sandbox** em não-prd e **egress SMTP bloqueado** em dev/hml. Vale igual pra **SMS/voz, push, webhook de terceiro, cobrança e tool de envio de agente/LLM**. Entrega real fora de prd exige **as cinco**: ADR + allowlist ≤5 + cap + janela + subdomínio de envio separado. Piso na SKILL.md ("Efeito externo NUNCA sai de não-produção").
 
+### Git, deploy e gate da IA (pisos 22, 23 e 24)
+
+50. **Código para a VPS por fora do git** — `scp`, `rsync`, `tar | ssh`, `docker save | load`, `git bundle` ad-hoc, patch colado, arquivo editado no servidor.
+    → Deploy **somente do git**: o ops na VPS faz `fetch` + `checkout` de SHA/tag verificado (piso 23; `ops.md` §1, §8). Sintoma real: muita dor, servidor divergente do repositório.
+51. **IA com `ssh` mutável na VPS** (`systemctl`, `docker`, editar arquivo, firewall, cron) ou contornando comando que falta no ops.
+    → A IA só fala com o ops; falta comando, implementa **no repo do ops** via git (piso 24; `ops.md` §8.5).
+52. **IA escrevendo SQL, script ou comando mutável próprio** contra a plataforma.
+    → Operação **nomeada e tipada**; leitura de banco por query nomeada e versionada; migration só a versionada no git (piso 24).
+53. **Concluir a demanda sem remote, sem push ou com local ≠ origin** ("pronto" com commits só na máquina).
+    → Trava de conclusão: `git remote -v` não vazio + `git status` limpo + `HEAD == origin`; senão cria/pede o repo e dá push (piso 22).
+54. **Ops sem guardrail ou sem auditoria** — operação livre, sem allowlist/dry-run/confirmação/teto de blast radius, sem identidade do chamador, sem log append-only, sem kill-switch/rollback; ou ops tão pobre que a IA "precisa" do `ssh`.
+    → Guardrails e log de auditoria do `ops.md` §8.3/§8.4 **e** catálogo de leitura/escrita completo (§8.2).
+
 > Regra de bolso: se a justificativa começa com "só pra funcionar", "depois eu arrumo", ou "é mais rápido assim" e o resultado mexe em segredo, auth, dado, registro, **ou toca o servidor por fora do fluxo/ops** — **provavelmente é uma macaquice desta lista. Para e faz certo.**
 
 ---

@@ -2,6 +2,17 @@
 
 Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 com versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.31.0] — 2026-10-31
+### Adicionado
+- Pisos **22** (tudo vai pro git; trava de conclusão: remote acessível + `git status` limpo + `HEAD == origin`), **23** (deploy SOMENTE do git; vetado scp/rsync/tar|ssh/docker save|load/bundle/edição remota/patch colado) e **24** (o ops é o gate da IA; a IA nunca muda a VPS direto nem escreve SQL/script/comando mutável) em `assets/CLAUDE.md`; pisos 14/15/16 apontam para eles. Três seções no `CORE.md` (marcador v0.31.0).
+- `references/ops.md` §8 "Contrato de gate da IA": bootstrap, catálogo mínimo de leitura/escrita, guardrails, log de auditoria append-only, fluxo "falta comando -> implementa no repo do ops"; §1/§4 vetam scp/rsync explicitamente.
+- Anti-padrões 50-54 (`anti-padroes.md`) e itens de DoD (`entrega.md` §35): remote+push+HEAD==origin; deploy de SHA do git via ops.
+- `scripts/check-deploy-git.sh` (+ teste, plugado no CI template): detecta scp/rsync/tar|ssh em scripts de deploy/CI e remote ausente/árvore suja/commits por empurrar.
+- Porquê: código enviado por scp, ssh mutável da IA, SQL livre e "pronto" sem push eram falhas recorrentes e caras.
+
+### Pendência
+- `check-deploy-git.sh` já plugado no `assets/ci/github-actions-ci.yml` (com `SKIP_GIT=1`). Pendente: a detecção de HEAD==origin do Stop hook do overdev (app `schematize`).
+
 ## [0.30.0] — 2026-10-20
 ### Adicionado
 - Pisos **20** (matriz de acesso por rota) e **21** (passkey na fase 0) em `assets/CLAUDE.md`; dois bullets no `CORE.md` (marcador v0.30.0).
