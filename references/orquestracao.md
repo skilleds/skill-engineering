@@ -167,9 +167,16 @@ Registro frequente é o que torna a evolução **auditável** e a retomada **bar
 4. **Próximos passos** — 1 a 3 ações concretas;
 5. **Agents vivos** — saída do inventário do §9.6 (ou "nenhum");
 6. **Desvios** — o que fugiu do plano/pisos e por quê.
+7. **Custo** — trecho do período (desde o último relatório) e o acumulado do projeto: total em US$ e tokens, por modelo e por task, lidos de `<projeto>_archive/custos/custos.json` após `schematize cost sync && schematize cost report`. Sempre com a ressalva **"estimativa API-equivalente; confira o /usage"**. Sem o app instalado: registre "custo indisponível (app sem `cost`)" como desvio, não invente número.
 Sem segredo/PII (§16.1). Objetivo: um humano lê a pasta `relatorios/` e reconstrói a linha do tempo.
 
 **Handoff (6 h + eventos).** Mesmo conteúdo do `/eng-handoff` (§34.1): `context.md` + `checklist.md` (em `context/AAAA-MM-DD-<slug>-*`) no archive, completos o bastante para uma sessão **nova** retomar **só com eles**. Gatilhos: (a) 6 h de trabalho ativo desde `ultimo_handoff`; (b) **todo fim de sessão**, fechamento de marco e antes de `/compact`.
+
+**Custos (contabilidade).** O archive tem `<projeto>_archive/custos/` produzido pelo app (`schematize cost sync|report|show|tag|untag|pricing`; contrato v1 em `schematize_app_archive/contratos/custos-v1.md`, no archive do app):
+- `ledger.jsonl` — append-only, 1 linha por resposta deduplicada (`message.id`): `{ts, dia, semana_iso, sessao, agente, modelo, task, in, out, cache_w, cache_r, usd}`; idempotente.
+- `custos.json` (máquina) e o relatório humano `custos` em markdown — derivados do ledger: total, por modelo, dia, semana ISO, task, sessão e agente, em US$ e tokens.
+- `pricing.toml` (opcional, override do projeto), `tasks.jsonl` (tags `cost tag`/`untag`, append-only), `.cursor.json` (offset por transcript).
+Fonte: transcripts do Claude Code (`~/.claude/projects/<slug>/*.jsonl` e `subagents/`). Task = tag explícita, senão item ativo do checklist do overdev, senão `sem-task`. É **estimativa API-equivalente** (assinatura pode cobrar diferente; confira o `/usage`); modelo sem preço = custo `null` + aviso. Tudo versionado no git na hora, junto do relatório.
 
 **Carimbo `<projeto>_archive/.ritmo.json`:** `{"ultimo_relatorio":"2026-10-31T14:30:00-03:00","ultimo_handoff":"2026-10-31T09:00:00-03:00"}` (ISO-8601). Atualizado **na mesma operação** que gera o relatório/handoff e commitado junto. O gate compara os dois carimbos com o relógio de parede (`--agora`), então vale **durante sessão ativa**; pausas > 15 min são descontadas pelo agente ao decidir se a marca venceu.
 

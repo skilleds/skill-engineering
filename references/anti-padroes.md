@@ -260,6 +260,21 @@ Prioridades, em ordem de desempate:
 56. **Sessão longa sem relatório/handoff** — horas de trabalho ativo sem `relatorios/*.md`, sem handoff, `.ritmo.json` ausente ou vencido; fim de sessão sem handoff.
     → Relatório a cada 30 min e handoff a cada 6 h/fim de sessão, antes da próxima entrega, commitados (piso 26; `orquestracao.md` §9.8; `check-ritmo.sh`).
 
+### CI remoto e microserviço autônomo (pisos 27 e 28)
+
+57. **CI remoto por commit** — workflow com `on: push` em branch, `pull_request` sem filtro, sem `concurrency`/`cancel-in-progress`, cron sem justificativa; agent que dispara ou espera CI a cada commit.
+    → Gate por commit é local (`tools/ci.sh`); CI remoto 1x antes do hml, a pedido ou em tag; `workflow_dispatch` + `push: tags` (piso 27; `check-ci-triggers.sh`).
+58. **Microserviço que crasha, não sobe ou perde dado quando o vizinho cai** — boot que consulta outro serviço, exceção não tratada na chamada, evento descartado no erro.
+    → Autônomo com início/meio/fim; item vai para a fila durável e o serviço segue saudável (piso 28; `testes.md`).
+59. **Fila em memória** (lista/canal/queue do processo) como buffer de dado que não pode ser perdido.
+    → Outbox/inbox persistida em DB ou Redis durável; o restart drena sem perda nem duplicata (piso 28).
+60. **Ack antes de persistir** — confirmar o recebimento antes do commit, ou reentrega que duplica efeito (sem chave de idempotência); mensagem envenenada que trava a fila (sem DLQ).
+    → Persiste, depois confirma; idempotência por chave; DLQ após N tentativas; teste do crash entre persistir e confirmar (piso 28).
+61. **Serviço sem os 7 testes de resiliência** ou sem `resilience.yml` (matriz M != N).
+    → `check-resilience.sh` no CI; sem os testes não passa no gate (piso 28).
+62. **Custo sem contabilidade** — sessões longas/orquestradas sem `custos/` no archive, relatório de ritmo sem o trecho de custo, ou número de custo inventado/sem a ressalva de estimativa.
+    → `schematize cost sync|report`; relatório com custo do período e acumulado, "estimativa API-equivalente; confira o /usage" (piso 26; `orquestracao.md` §9.8).
+
 > Regra de bolso: se a justificativa começa com "só pra funcionar", "depois eu arrumo", ou "é mais rápido assim" e o resultado mexe em segredo, auth, dado, registro, **ou toca o servidor por fora do fluxo/ops** — **provavelmente é uma macaquice desta lista. Para e faz certo.**
 
 ---

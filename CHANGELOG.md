@@ -2,6 +2,23 @@
 
 Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 com versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.33.0] — 2026-10-31
+### Adicionado
+- Piso **27** (CI/CD remoto NÃO roda por commit: gate por commit é local; CI remoto só 1x antes do hml, a pedido do usuário ou em release/tag; gatilho padrão `workflow_dispatch` + `push: tags`; VETADO `on: push` em branch e `pull_request` sem filtro; `concurrency` com `cancel-in-progress` e `paths-ignore`; cron só com justificativa; nenhum agent dispara nem espera CI por commit) e piso **28** (todo microserviço é serviço à parte e funciona sozinho: início/meio/fim, fila durável, retry+backoff+jitter, circuit breaker, DLQ, alerta com `trace_id`, ack só depois do commit, idempotência; 7 testes unitários obrigatórios no CI, matriz M == N) em `assets/CLAUDE.md`. Pisos 10, 14 e 15 apontam para eles; nota de custos no piso 26.
+- `CORE.md` (marcador v0.33.0): seções "CI remoto só antes do hml" e "Microserviço autônomo", custo no ritmo; seções existentes condensadas (palavras, nenhuma regra removida; "Deploy só do git" e "Ops é o gate" fundidas). Linha final cobre pisos 13, 19-28. 3,9 KB, dentro do limite de 4096 bytes.
+- `references/testes.md`: "Resiliência do microserviço: fila + testes" com os 7 testes em pseudocódigo agnóstico, `resilience.yml` e a matriz M == N. `operacao.md` §21: política de CI remoto. `orquestracao.md` §9.8: seção Custo no relatório e layout `custos/` (ledger.jsonl, custos.json, custos.md, pricing.toml, tasks.jsonl, .cursor.json; estimativa API-equivalente; contrato v1 no archive do app). `entrega.md` (DoD) e `anti-padroes.md` 57-62.
+- `scripts/check-ci-triggers.sh` (+ teste): reprova `on: push` em branch, `pull_request` sem filtro, falta de `concurrency`/`cancel-in-progress`, cron sem `justificativa:`. `scripts/check-resilience.sh` (+ teste): exige teste nomeado para cada um dos 7 casos e um de indisponibilidade por dependência de `resilience.yml` (heurística por nome, limitação documentada). Ambos opt-in/plugados no template de CI.
+- `assets/ci/github-actions-ci.yml`: gatilhos trocados para `workflow_dispatch` + `push: tags` (`hml-*`, `v*`), `concurrency`, `paths-ignore`. `/eng-report` inclui o custo do período.
+- Porquê: CI remoto por commit custava caro sem retorno; microsserviço que crasha ou perde dado quando o vizinho cai era falha recorrente; sessões sem contabilidade de custo.
+
+### Pendência
+- App `schematize`/ops: disparar o CI remoto **UMA vez por promoção a hml** (hoje depende de o agente seguir o piso 27) e implementar `schematize cost sync|report|show|tag|untag|pricing` (contrato custos-v1).
+- App: hook de parada (Stop) que rejeite encerrar sessão com workflow fora do piso 27 (`check-ci-triggers.sh`) ou serviço sem a matriz de resiliência (`check-resilience.sh`), e que dispare o relatório de 30 min com o trecho de custo.
+- Catálogo: `.github/workflows/catalog-lint.yml` passou a `workflow_dispatch` + tags e a org das skills corrigida para `skilleds` (era `schematizeme`, que não tem repos `skill-*`).
+
+### Mantido (piso inalterado)
+- Pisos 1-26 sem alteração de regra (10, 14, 15 e 26 só ganharam ponteiros).
+
 ## [0.32.0] — 2026-10-31
 ### Adicionado
 - Piso **25** (sem agents inúteis acumulados: descarte por critério — entregou e revisado, falhou e substituído, sem pendência, depende de outro; inventário `ListAgents` ao fim de cada onda) e piso **26** (ritmo de registro: relatório a cada 30 min em `<projeto>_archive/relatorios/AAAA-MM-DD_HHMM.md`, handoff a cada 6 h e em fim de sessão/marco/compact, carimbos em `<projeto>_archive/.ritmo.json`) em `assets/CLAUDE.md`.

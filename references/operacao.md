@@ -46,6 +46,8 @@
 - **VETADO editar código direto no servidor (hml/prd).** O servidor é **imutável por edição manual** — recebe só artefato promovido do git. Precauções: filesystem read-only, **drift detection** (recusa/alerta divergência com o git), acesso de escrita = break-glass auditado. Hotfix segue o mesmo fluxo, acelerado. Detalhe e o control plane em **`references/ops.md`**.
 - **Toda operação no servidor passa pelo `<projeto>_ops`** (§2, `references/ops.md`): install/update/config/migrate/rollback/troubleshoot — nunca à mão. Instalação **paralela por padrão** (= `nproc`); falha no paralelo = serviços não independentes → corrigir a independência é prioridade máxima (piso 10).
 
+- **Política de CI remoto (piso 27): o CI NÃO roda por commit.** Custo estratosférico: o gate por commit é **local** (`tools/ci.sh` e equivalentes, custo zero) e os commits se acumulam. O CI remoto roda **só** (a) **uma vez antes de promover para hml**, sobre tudo o que acumulou; (b) quando o usuário pedir; (c) em release/tag. Gatilho padrão: `workflow_dispatch` + `push: tags` (`hml-*`, `v*`). **VETADO** `on: push` em branch e `pull_request` sem filtro como default; `cron` só com justificativa escrita. Todo workflow leva `concurrency` com `cancel-in-progress: true` e `paths-ignore` para docs/md. Nenhum agent dispara nem espera CI remoto por commit; o ops dispara o CI **UMA vez por promoção a hml**. Gate: `scripts/check-ci-triggers.sh`.
+
 ### 21.1 Estratégia de Deploy
 
 | Estratégia | Quando usar |

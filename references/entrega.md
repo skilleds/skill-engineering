@@ -103,6 +103,9 @@ Uma task está pronta quando, cumulativamente:
 - [ ] **Deploy (se houve) veio de SHA/tag do git, executado pelo ops na VPS; nenhum `scp`/`rsync`/`ssh` mutável da IA (pisos 23/24)**
 - [ ] **Sem agent ocioso acumulado: inventário de agents vivos feito e os sem pendência encerrados (piso 25; `orquestracao.md` §9.6)**
 - [ ] **Ritmo em dia: relatório ≤ 30 min e handoff ≤ 6 h de trabalho ativo, `.ritmo.json` atualizado e commitado (piso 26; `scripts/check-ritmo.sh`)**
+- [ ] **CI remoto sem gatilho por commit (piso 27): workflows só com `workflow_dispatch` + `push: tags`, `concurrency` com `cancel-in-progress`, `paths-ignore`; gate local verde por commit; CI remoto rodou 1x antes do hml (`scripts/check-ci-triggers.sh`)**
+- [ ] **Microserviço autônomo (piso 28): `resilience.yml` com as dependências, fila durável, e os 7 testes de resiliência no CI, matriz M == N (`scripts/check-resilience.sh`)**
+- [ ] Relatório de ritmo inclui o custo do período e o acumulado (`<projeto>_archive/custos/`, estimativa API-equivalente; `orquestracao.md` §9.8)
 - [ ] Documentação atualizada (README, ADR, runbook se aplicável)
 - [ ] Smoke tests executados em staging **(com asserção de conteúdo e self-check anti verde-mentiroso — skill `schematize-qa`)**
 - [ ] CI verde, code review aprovado
@@ -110,7 +113,7 @@ Uma task está pronta quando, cumulativamente:
 - [ ] Feature flag configurada (se aplicável)
 - [ ] CODEOWNERS aplicável revisou
 
-> Os itens em negrito são **bloqueantes absolutos**: archive (§28), ausência de macaquice (§37), teste emulado com rota 100% acessível (skill `schematize-qa`), **matriz de acesso por rota verde (M == N)**, **nenhum efeito externo real fora de prd** (`efeitos-externos.md`), **remote + push + HEAD == origin** (piso 22), **deploy só do git via ops** (pisos 23/24), **sem agent ocioso** e **ritmo de registro em dia** (pisos 25/26), e pentest de entrada limpo (skill `schematize-pentest`). Faltando qualquer um, a task **não está pronta** — independente de todo o resto estar verde. Smoke verde não basta: tem que ser smoke que **prova** conteúdo, não só status.
+> Os itens em negrito são **bloqueantes absolutos**: archive (§28), ausência de macaquice (§37), teste emulado com rota 100% acessível (skill `schematize-qa`), **matriz de acesso por rota verde (M == N)**, **nenhum efeito externo real fora de prd** (`efeitos-externos.md`), **remote + push + HEAD == origin** (piso 22), **deploy só do git via ops** (pisos 23/24), **sem agent ocioso** e **ritmo de registro em dia** (pisos 25/26), **CI remoto fora de commit** e **resiliência do microserviço M == N** (pisos 27/28), e pentest de entrada limpo (skill `schematize-pentest`). Faltando qualquer um, a task **não está pronta** — independente de todo o resto estar verde. Smoke verde não basta: tem que ser smoke que **prova** conteúdo, não só status.
 
 ---
 

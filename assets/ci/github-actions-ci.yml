@@ -1,9 +1,20 @@
 # schematize-engineering — workflow de CI de referência (§13, §21, §35; testes/Q.A. na skill schematize-qa).
 # Copie para .github/workflows/ci.yml e ajuste <projeto>/comandos da sua stack.
+#
+# PISO 27 — CI remoto NÃO roda por commit (custo). O gate por commit é LOCAL (tools/ci.sh e equivalentes).
+# Este workflow roda só: (a) uma vez antes de promover para hml (tag `hml-*`), (b) em release (tag `v*`),
+# (c) quando o usuário pedir (workflow_dispatch). VETADO `on: push` em branch e `pull_request` sem filtro.
+# Gate: scripts/check-ci-triggers.sh reprova o que fugir disso.
 name: ci
 on:
-  pull_request:
-  push: { branches: [main] }
+  workflow_dispatch:
+  push:
+    tags: ["hml-*", "v*"]
+    paths-ignore: ["**.md", "docs/**", "*_archive/**"]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   standards-gate:
@@ -33,6 +44,14 @@ jobs:
       - name: Ritmo de registro (piso 26) — OPCIONAL; só vale em sessão ativa, ative com a variável RITMO_ARCHIVE
         if: ${{ vars.RITMO_ARCHIVE != '' }}
         run: bash .claude/skills/schematize-engineering/scripts/check-ritmo.sh "${{ vars.RITMO_ARCHIVE }}"
+      - name: Gatilhos de CI (piso 27) — nada de on:push em branch / pull_request sem filtro / sem concurrency
+        run: bash .claude/skills/schematize-engineering/scripts/check-ci-triggers.sh .
+      - name: Resiliência do microserviço (piso 28) — OPCIONAL; ative com a variável RESILIENCE_DIRS (dirs de serviço com resilience.yml, separados por espaço)
+        if: ${{ vars.RESILIENCE_DIRS != '' }}
+        run: |
+          for d in ${{ vars.RESILIENCE_DIRS }}; do
+            bash .claude/skills/schematize-engineering/scripts/check-resilience.sh "$d"
+          done
 
   test-kit:
     runs-on: ubuntu-latest

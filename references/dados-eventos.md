@@ -144,6 +144,8 @@ Exemplos: `catalog.product.created`, `billing.invoice.paid`.
 
 ## 18. Resiliência
 
+> Contrato completo do microserviço autônomo (início/meio/fim, fila durável, 7 testes obrigatórios, matriz M == N): piso 28 e `testes.md` "Resiliência do microserviço".
+
 **MUST em chamadas externas:**
 - Timeout explícito (nunca infinito).
 - Retry com backoff exponencial + jitter, idempotência garantida.
