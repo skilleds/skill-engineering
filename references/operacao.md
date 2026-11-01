@@ -67,6 +67,13 @@
 - PRs em serviços principais geram ambiente efêmero automaticamente.
 - Destruído ao merge ou após X dias de inatividade.
 
+### 21.3 Build/teste em máquina dev/hml e higiene (piso 29)
+
+**MUST**
+- Havendo máquina dev/hml de build/teste (`<projeto>_ops/maquinas.yml`), build e teste rodam nela; sem ela, build local. Fluxo e limites da exceção: `ops.md` §9.
+- Higiene após todo ciclo de teste (local e remoto) com `scripts/higiene.sh`: dry-run, depois `--apply`; limiar de disco (ex.: 80%) higieniza antes de novo build.
+- O que a máquina de build produziu não é promovível: promoção a hml/prd parte de commit + push + build limpo do git.
+
 ---
 
 ---

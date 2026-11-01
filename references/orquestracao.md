@@ -168,6 +168,7 @@ Registro frequente é o que torna a evolução **auditável** e a retomada **bar
 5. **Agents vivos** — saída do inventário do §9.6 (ou "nenhum");
 6. **Desvios** — o que fugiu do plano/pisos e por quê.
 7. **Custo** — trecho do período (desde o último relatório) e o acumulado do projeto: total em US$ e tokens, por modelo e por task, lidos de `<projeto>_archive/custos/custos.json` após `schematize cost sync && schematize cost report`. Sempre com a ressalva **"estimativa API-equivalente; confira o /usage"**. Sem o app instalado: registre "custo indisponível (app sem `cost`)" como desvio, não invente número.
+8. **Higiene e recursos** (piso 29) — disco antes/depois (`df`, local e na máquina dev/hml de build, se houver), o que a `scripts/higiene.sh` liberou (itens e bytes, do `.higiene.log`) e, quando houve máquina de build, o que foi enviado por ponte e o que rodou lá. Sem ciclo de build no período: "sem build". Não invente número: cole o resumo do script.
 Sem segredo/PII (§16.1). Objetivo: um humano lê a pasta `relatorios/` e reconstrói a linha do tempo.
 
 **Handoff (6 h + eventos).** Mesmo conteúdo do `/eng-handoff` (§34.1): `context.md` + `checklist.md` (em `context/AAAA-MM-DD-<slug>-*`) no archive, completos o bastante para uma sessão **nova** retomar **só com eles**. Gatilhos: (a) 6 h de trabalho ativo desde `ultimo_handoff`; (b) **todo fim de sessão**, fechamento de marco e antes de `/compact`.

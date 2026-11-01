@@ -2,6 +2,23 @@
 
 Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 com versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.34.0] — 2026-11-01
+### Adicionado
+- Piso **29** (build/teste em máquina de dev/hml; higiene obrigatória) em `assets/CLAUDE.md`. (a) Detecção por inventário `<projeto>_ops/maquinas.yml` (nome, host, `env` ∈ {dev,hml}, `papel: build-teste`, `ponte_direta: true`, workspace remoto, limites de disco/CPU): havendo máquina, build e teste rodam nela; senão build local. (b) **Exceção ESCOPADA aos pisos 14/23/24** (marcada FLAG para o usuário): ponte direta e alteração na máquina só para build/teste, dentro do workspace remoto; continua vetado prd, deploy oficial por ponte, segredo real de prd, dado/volume/banco/`.env` de serviços ali, efeito externo real; o build por ponte NÃO é promovível (commit+push+build limpo do git). Pisos 14, 23 e 24 ganharam nota apontando para o 29, sem alargar. (c) Higiene após cada ciclo (local e remoto), dry-run por padrão. (d) Disco acima do limiar: higieniza antes de novo build.
+- `CORE.md` (marcador v0.34.0): seção "Build em dev/hml + higiene"; seções existentes condensadas (palavras, nenhuma regra removida). 4077 bytes, 50 linhas. Linha final cobre pisos 13, 19-29.
+- `references/ops.md` §9 "Máquina de build/teste (dev/hml)": formato do `maquinas.yml`, fluxo (detectar, higienizar se preciso, sync, build/teste remoto, coletar, higienizar, registrar), limites da exceção, o que não é promovível. `operacao.md` §21.3. DoD (`entrega.md` §35): "higiene feita; recursos liberados registrados". Anti-padrões 63-66 (build local pesado havendo máquina; cache acumulado; build de teste como artefato de promoção; higiene que apaga dado persistente).
+- `scripts/higiene.sh` (+ teste): dry-run default, `--apply`, escopo workspace + allowlist, `--keep-last`, `--expire-days`, `--docker` (só volumes anônimos), `--if-above`, log com bytes; testes provam que não apaga volume nomeado, `.env`, `_archive`, caminho versionado, repo com commit não pushado nem nada fora do escopo. `scripts/check-build-host.sh` (+ teste): lint do `maquinas.yml` (reprova prd/staging, workspace inseguro, ponte_direta ausente).
+- `orquestracao.md` §9.8: o relatório de 30 min ganha o item 8 (disco antes/depois, o que a higiene liberou, o que foi enviado/rodado na máquina de build); `/eng-report` ajustado.
+- Porquê: recursos das máquinas toda hora no limite por builds e caches acumulados; testar na máquina dev/hml poupa a máquina do usuário.
+
+### Pendência
+- App/ops: implementar a leitura de `maquinas.yml` (detecção automática), o sync/build remoto e a higiene automática pós-ciclo (hoje depende do agente seguir o piso 29 e rodar `higiene.sh`).
+- Governador de concorrência (`schematize agents`): considerar a CPU/RAM/disco da máquina remota (`limite_cpu`, `limite_disco_pct`) ao calcular o teto.
+- Usuário: revisar a exceção do piso 29 (ops.md §9), que toca regras declaradas absolutas, e apertar o escopo se quiser.
+
+### Mantido (piso inalterado)
+- Pisos 1-28 sem alteração de regra (14, 23 e 24 só ganharam a nota de exceção escopada).
+
 ## [0.33.0] — 2026-10-31
 ### Adicionado
 - Piso **27** (CI/CD remoto NÃO roda por commit: gate por commit é local; CI remoto só 1x antes do hml, a pedido do usuário ou em release/tag; gatilho padrão `workflow_dispatch` + `push: tags`; VETADO `on: push` em branch e `pull_request` sem filtro; `concurrency` com `cancel-in-progress` e `paths-ignore`; cron só com justificativa; nenhum agent dispara nem espera CI por commit) e piso **28** (todo microserviço é serviço à parte e funciona sozinho: início/meio/fim, fila durável, retry+backoff+jitter, circuit breaker, DLQ, alerta com `trace_id`, ack só depois do commit, idempotência; 7 testes unitários obrigatórios no CI, matriz M == N) em `assets/CLAUDE.md`. Pisos 10, 14 e 15 apontam para eles; nota de custos no piso 26.

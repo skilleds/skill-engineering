@@ -100,6 +100,7 @@ Uma task está pronta quando, cumulativamente:
 - [ ] Migration testada com rollback (se houver schema change)
 - [ ] **Nenhum efeito externo real fora de `prd` (se o projeto envia e-mail/SMS/push/webhook/cobrança):** provider default = sink, guard deny-by-default no provider (com teste que **vê a recusa**), cap por execução, endereços só no **domínio de teste em rota nula** (`references/efeitos-externos.md`; anti-padrão em `references/anti-padroes.md` §37, item *"Disparar efeito externo REAL a partir de não-produção"*)
 - [ ] **Remote existe, push feito, `HEAD == origin`, `git status` limpo (piso 22) — sem isso a task não conclui**
+- [ ] **Higiene feita (piso 29): build/cache do ciclo apagados com `scripts/higiene.sh` (local e, se houve, na máquina dev/hml); recursos liberados registrados no relatório; nada de dado persistente tocado**
 - [ ] **Deploy (se houve) veio de SHA/tag do git, executado pelo ops na VPS; nenhum `scp`/`rsync`/`ssh` mutável da IA (pisos 23/24)**
 - [ ] **Sem agent ocioso acumulado: inventário de agents vivos feito e os sem pendência encerrados (piso 25; `orquestracao.md` §9.6)**
 - [ ] **Ritmo em dia: relatório ≤ 30 min e handoff ≤ 6 h de trabalho ativo, `.ritmo.json` atualizado e commitado (piso 26; `scripts/check-ritmo.sh`)**

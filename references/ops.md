@@ -16,6 +16,7 @@ desenvolvimento local  →  teste local (verde)  →  GitHub (merge)  →  hml  
 - **VETADO editar código direto no servidor (hml/prd).** O servidor é **imutável por edição manual** — recebe apenas **artefato promovido do git** (mesma imagem/commit SHA, §21). "Editei direto no prd pra resolver rápido" é o anti-padrão que esta reference existe pra matar.
 - **Canal único de código = git (pisos 22/23).** **VETADO** `scp`, `rsync`, `tar | ssh`, `docker save | load`, `git bundle` ad-hoc, editar arquivo remoto e colar patch na VPS. Só o ops, **na VPS**, busca do remoto git (`fetch` + `checkout` de SHA/tag exato, verificado). Código não pushado não é deploy-ável.
 - **Hotfix segue o mesmo fluxo, acelerado:** branch → teste local → git → hml → prd. Urgência **não** autoriza mão no servidor.
+- **Única exceção escopada:** a máquina de build/teste dev/hml do piso 29, só para build/teste e dentro do workspace de build (§9); nunca deploy, nunca prd.
 - **Precauções concretas:** deploy só aceita artefato com **proveniência git** (commit SHA); filesystem **read-only** em hml/prd; **drift detection** (o ops recusa/alerta divergência com o git); acesso de escrita = **exceção auditada** (break-glass no archive), nunca o fluxo.
 
 ## 2. Layout no servidor, seed global e redeploy destrutivo
@@ -110,3 +111,40 @@ Acesso humano, auditado e registrado no archive, continua existindo. **Nunca par
 Comando: **`/<slug>-ops`** (ex.: `/eng-ops`, `/go-ops`) — audita/scaffolda o ops, verifica o fluxo de ambientes, o layout `/<app>/` + seed, o isolamento por usuário, a paralelização (`nproc`) e a independência.
 
 > Regra de bolso: **nada toca o servidor fora do ops (a IA, nem com ssh); código só chega via git (nunca scp/rsync); nada chega ao servidor sem git + teste local; todo redeploy nasce do `/<app>/.env` (destrói a app, preserva os dados); cada serviço tem seu user.** Instalar é paralelo por padrão; se o paralelo quebra, o bug é de independência — a correção mais urgente que existe.
+
+## 9. Máquina de build/teste (dev/hml) — exceção escopada do piso 29
+
+> **FLAG PARA O USUÁRIO:** esta seção abre UMA exceção às regras absolutas dos pisos 14/23/24 (ponte direta e alteração na máquina). Ela é curta de propósito, para o escopo poder ser apertado. Fora do que está escrito aqui, os pisos 14/23/24 valem inteiros.
+
+**Regra.** Se o projeto tem máquina **dev e/ou hml** (hml, **nunca staging**) com papel de build/teste, o agente **evita buildar local** e roda ali tudo o que for possível (build, testes unitários/integração, imagens, benchmarks); o local só edita e roda gates baratos. Sem essa máquina: build local, sem cerimônia. Em ambos os casos vale a higiene (abaixo).
+
+### 9.1 Inventário `<projeto>_ops/maquinas.yml` (na falta, `<projeto>_archive/maquinas.yml`)
+```yaml
+maquinas:
+  - nome: build-dev-1
+    host: 10.0.0.5            # ssh configurado por chave; nunca senha no arquivo
+    env: dev                  # dev | hml  (prd e staging reprovam no gate)
+    papel: build-teste
+    ponte_direta: true        # liga a exceção do piso 29, só para esta máquina
+    workspace: /var/tmp/schematize-build/<projeto>/   # único lugar onde a ponte escreve
+    limite_disco_pct: 80      # acima disso higieniza ANTES de novo build
+    limite_cpu: 4             # nº de jobs paralelos (governador de concorrência)
+```
+Lint: `scripts/check-build-host.sh maquinas.yml` (+ teste). Sem entradas, o arquivo não deve existir.
+
+### 9.2 Fluxo
+1. **Detectar** — ler o inventário; sem máquina dev/hml → build local (e higiene local no fim).
+2. **Higienizar se preciso** — disco da máquina acima de `limite_disco_pct`: `higiene.sh --workspace <ws> --if-above <pct> --apply` antes de começar.
+3. **Sync** — `rsync`/`scp` da árvore de trabalho **apenas para o `workspace`** da máquina (nunca fora dele; nunca `.env`/segredo real de prd).
+4. **Build/teste remoto** — `ssh` rodando build e testes dentro do workspace; paralelismo ≤ `limite_cpu`.
+5. **Coletar** — trazer só o resultado (logs, relatórios, números); artefato de build fica lá e é descartável.
+6. **Higienizar** — `higiene.sh --workspace <ws> [--keep-last N] [--docker]`, conferir o dry-run, depois `--apply`; o mesmo no local se buildou local. Medir disco antes/depois.
+7. **Registrar** — no relatório de 30 min (`orquestracao.md` §9.8): o que foi enviado, o que rodou, disco antes/depois e "recursos liberados".
+
+### 9.3 Limites da exceção (sem alargar)
+- **Permitido:** ponte direta (rsync/scp/ssh), sync da árvore de trabalho e comando mutável **somente para build/teste, dentro do workspace remoto**.
+- **Continua VETADO:** qualquer ponte direta a **prd**; deploy "oficial" de dev/hml por ponte (só do git, via ops, pisos 23/24); segredo real de prd na máquina; tocar dados, volumes, banco, uploads ou `.env` de serviços ali existentes; efeito externo real (piso 18).
+- **NÃO é promovível:** o que o build produziu por ponte não vira artefato de hml/prd. Promover = commit + push + **build limpo a partir do git** (SHA verificado).
+
+### 9.4 Higiene (`scripts/higiene.sh`)
+Dry-run por padrão (lista caminho e tamanho); `--apply` explícito; escopo = `--workspace` + `--allow` (nada fora); `--keep-last N` poupa o cache mais recente; `--expire-days N` remove workspaces filhos vencidos; `--docker` limpa containers parados, imagens dangling, build cache e volumes **anônimos**; `--if-above PCT` só roda acima do limiar; log em `<ws>/.higiene.log` (ISO, ação, caminho, bytes). Apaga: `target/`, `build`, `dist`, `.next`, `node_modules/.cache`, `__pycache__`, `.pytest_cache`, `.gradle`, `obj`/`bin`, `_build`/`deps`, `zig-cache`. **Nunca** apaga volume nomeado, banco, uploads, `.env*`, `*_archive`, `.git`, caminho versionado no git, repo com commit não pushado ou árvore suja, symlink, nem nada fora do escopo.

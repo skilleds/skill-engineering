@@ -274,6 +274,14 @@ Prioridades, em ordem de desempate:
     → `check-resilience.sh` no CI; sem os testes não passa no gate (piso 28).
 62. **Custo sem contabilidade** — sessões longas/orquestradas sem `custos/` no archive, relatório de ritmo sem o trecho de custo, ou número de custo inventado/sem a ressalva de estimativa.
     → `schematize cost sync|report`; relatório com custo do período e acumulado, "estimativa API-equivalente; confira o /usage" (piso 26; `orquestracao.md` §9.8).
+63. **Build local pesado havendo máquina dev/hml** — compilar/testar/gerar imagem na máquina do usuário com máquina de build declarada em `maquinas.yml`.
+    → build e teste na máquina dev/hml (`ops.md` §9); local só edita e roda gates baratos (piso 29).
+64. **Build/cache acumulado** — `target/`, `.next`, `node_modules/.cache`, imagens e build cache do Docker, workspaces vencidos deixados entre sessões; disco topando.
+    → `higiene.sh` após cada ciclo (local e remoto) e antes de novo build acima do limiar; recursos liberados no relatório (piso 29).
+65. **Build da máquina de teste como artefato de promoção** — imagem/binário produzido por ponte direta indo para hml/prd.
+    → promoção só de commit + push + build limpo do git (SHA verificado); o build por ponte é descartável (pisos 23/29).
+66. **Higiene que apaga dado persistente** — `rm -rf`/`docker system prune --volumes` solto que leva volume nomeado, banco, uploads, `.env`, `_archive` ou repo com commit não pushado.
+    → `higiene.sh`: dry-run por padrão, `--apply` explícito, escopo = workspace + allowlist, log; volume só anônimo (piso 29).
 
 > Regra de bolso: se a justificativa começa com "só pra funcionar", "depois eu arrumo", ou "é mais rápido assim" e o resultado mexe em segredo, auth, dado, registro, **ou toca o servidor por fora do fluxo/ops** — **provavelmente é uma macaquice desta lista. Para e faz certo.**
 
