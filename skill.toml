@@ -3,7 +3,7 @@ name = "schematize-engineering"
 tag = "Base · Engenharia"
 status = "beta"
 order = 6
-current_version = "0.35.1"
+current_version = "0.35.2"
 href = "/engineering"
 
 [descriptions]
