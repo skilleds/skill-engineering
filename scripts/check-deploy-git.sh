@@ -8,7 +8,7 @@
 #   isenta a linha (use com ADR). (2) se o dir é repo git,
 #   falha sem remote, com árvore suja ou com commits por empurrar (HEAD != upstream).
 # Uso: bash scripts/check-deploy-git.sh [dir]   (default: .)   SKIP_GIT=1 pula a parte (2).
-# Saída: exit 0 ok, 1 se achou violação. Ver `references/ops.md` §1/§8 e CLAUDE.md pisos 22/23.
+# Saída: exit 0 ok, 1 se achou violação. Ver `schematize-engineering` -> `references/ops.md` §1/§8 e CLAUDE.md pisos 22/23.
 # strict-ok: gate acumula achados e sai no fim (`schematize-shell` -> `references/piso.md` secao 1)
 set -uo pipefail
 D="${1:-.}"; rc=0
