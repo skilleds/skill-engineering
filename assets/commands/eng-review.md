@@ -3,7 +3,7 @@ description: Roda o gate da Definition of Done e anti-padrões (§35, §37) no d
 argument-hint: "[ref git, ex: origin/main]"
 ---
 
-Faça o **review de padrões** do diff atual (contra $ARGUMENTS ou `origin/main`),
+Faça o **review de padrões** do diff atual (contra $ARGUMENTS ou `origin/main`; `HEAD` = modo pre-commit, olha o que está staged),
 combinando o checker determinístico com seu julgamento.
 
 1. Rode `bash .claude/skills/schematize-engineering/scripts/check-diff.sh ${ARGUMENTS:-origin/main}` e leia o resultado.
@@ -13,6 +13,7 @@ combinando o checker determinístico com seu julgamento.
      erro, teste silenciado, etc.
    - **Pisos de código (`padroes-codigo.md`):** arquivo >750 linhas (ou >~500 úteis) → bloqueia; >300 úteis (~400 obs) → flag; função sem doc-comment (o quê + onde).
    - **Pisos 20 e 21:** rota nova sem linha na matriz de acesso (4 personas, status e corpo, M == N) ou rota pública fora da allowlist → BLOQUEIA; projeto sem passkey real na fase 0 (registro, login, challenge reutilizado, origin/rpId errado, credencial revogada) → BLOQUEIA.
+   - **Pisos 22–29:** rode também `check-deploy-git.sh .` (22–24: remote, push, HEAD == origin, nada de scp/rsync/ssh mutável/SQL remoto), `check-ci-triggers.sh .` (27: nada de `pull_request`/push em branch/`workflow_run`), `check-resilience.sh <serviço>` (28), `check-ritmo.sh <archive>` (26); agents vivos sem pendência (25) e build/higiene em dev/hml (29, `check-build-host.sh`). Qualquer falha → BLOQUEIA.
    - **§39:** o índice de funcionalidades foi atualizado no mesmo PR?
    - **§3:** backend novo em Node/PHP? (proibido).
 3. Produza um relatório com `BLOQUEIA` (viola piso/DoD) e `ATENÇÃO` (melhorar),

@@ -35,8 +35,18 @@ out="$(bash "$G" "$T/svc" 2>&1)" && { echo "FAIL: sem DLQ deveria reprovar"; rc=
 grep -q "dlq_envenenada" <<<"$out" || { echo "FAIL: mensagem do caso 5"; rc=1; }
 # sem dependências: casos 2-5 dispensados, 1/6/7 exigidos
 mkdir -p "$T/solo/tests"; printf 'service: solo\ndependencies: []\n' > "$T/solo/resilience.yml"
-printf 'test_boot_sem_dependencias\ntest_shutdown_gracioso\ntest_crash_entre_persistir_e_confirmar\n' > "$T/solo/tests/a_test.py"
+printf 'def test_boot_sem_dependencias(): ...\ndef test_shutdown_gracioso(): ...\ndef test_crash_entre_persistir_e_confirmar(): ...\n' > "$T/solo/tests/a_test.py"
 bash "$G" "$T/solo" >/dev/null 2>&1 || { echo "FAIL: serviço sem vizinhos deveria passar com 1/6/7"; rc=1; }
+# consumidor de fila externa com dependencies: [] NÃO escapa de 3/4/5 (consumes_queue: true)
+printf 'service: solo\ndependencies: []\nconsumes_queue: true\n' > "$T/solo/resilience.yml"
+out="$(bash "$G" "$T/solo" 2>&1)" && { echo "FAIL: consumes_queue sem testes 3-5 deveria reprovar"; rc=1; }
+grep -q 'dlq_envenenada' <<<"$out" || { echo "FAIL: consumes_queue deveria cobrar DLQ"; rc=1; }
+printf 'def test_restart_fila_cheia(): ...\ndef test_reentrega_idempotente(): ...\ndef test_dlq_envenenada(): ...\n' >> "$T/solo/tests/a_test.py"
+bash "$G" "$T/solo" >/dev/null 2>&1 || { echo "FAIL: consumes_queue com 3-5 deveria passar"; rc=1; }
+# falso verde: tag só em comentário ou string não conta
+mkdir -p "$T/fake/tests"; printf 'service: f\ndependencies: []\n' > "$T/fake/resilience.yml"
+printf '# test_boot_sem_dependencias test_shutdown_gracioso test_crash_entre_persistir_e_confirmar\nx = "boot_sem_dependencias shutdown_gracioso crash_entre_persistir_e_confirmar"\n' > "$T/fake/tests/a_test.py"
+bash "$G" "$T/fake" >/dev/null 2>&1 && { echo "FAIL: tag em comentário/string não pode dar verde"; rc=1; }
 # resilience.yml ausente
 mkdir -p "$T/nada"; bash "$G" "$T/nada" >/dev/null 2>&1 && { echo "FAIL: resilience.yml ausente deveria reprovar"; rc=1; }
 [ "$rc" -eq 0 ] && echo "check-resilience.test: OK"

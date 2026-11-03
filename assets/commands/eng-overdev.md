@@ -48,7 +48,7 @@ aberto — o agente só fala com o usuário quando **tudo** estiver `- [x]` e o 
    - **Grave os artefatos da Fase 0** em `.schematize/overdev/`: `DECISOES.md` (0.1), `PLAN.md` (0.3) e o
      `CHECKLIST.md` **derivado do plano** (0.4, sobrescreve o template); espelhe `PLAN.md` +
      `OBJETIVO.md` em `<projeto>/<projeto>_archive/overdev/` (registro durável §28).
-   - Crie `.schematize/overdev/gate.sh` — verificação de máquina (`/eng-review` + testes + lint).
+   - Crie `.schematize/overdev/gate.sh` — verificação de máquina (`/eng-review` + testes + lint) **e os gates dos pisos 22–28**: `check-deploy-git.sh .` (remote + push + HEAD == origin = trava de conclusão), `check-ci-triggers.sh .`, `check-ritmo.sh <archive>` e `check-resilience.sh <serviço>`; `assets/ci/ci.sh` já os agrupa.
      `exit!=0` = não terminou, mesmo com caixas marcadas.
    - Sem o binário instalado? use o fallback `assets/hooks/overdev-stop.sh` (Stop-only) e a
      `assets/settings.claude.example.json` — mas o binário é o recomendado (faz o veto de

@@ -3,8 +3,9 @@
 #
 # PISO 27 — CI remoto NÃO roda por commit (custo). O gate por commit é LOCAL (tools/ci.sh e equivalentes).
 # Este workflow roda só: (a) uma vez antes de promover para hml (tag `hml-*`), (b) em release (tag `v*`),
-# (c) quando o usuário pedir (workflow_dispatch). VETADO `on: push` em branch e `pull_request` sem filtro.
-# Gate: scripts/check-ci-triggers.sh reprova o que fugir disso.
+# (c) quando o usuário pedir (workflow_dispatch). VETADO `pull_request`/`pull_request_target` (qualquer filtro),
+# `push` em branch, `workflow_run`, `merge_group`, cron sem justificativa. Não existe "check obrigatório no PR".
+# Gate: scripts/check-ci-triggers.sh reprova o que fugir disso. Gate por commit: assets/ci/ci.sh (local).
 name: ci
 on:
   workflow_dispatch:
@@ -23,7 +24,10 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with: { fetch-depth: 0 }
       - name: Gate de padrões (DoD/§37) no diff
-        run: bash .claude/skills/schematize-engineering/scripts/check-diff.sh "origin/${{ github.base_ref || 'main' }}"
+        # tag de promoção: diff desde a tag anterior (sem tag anterior: contra origin/main). Nada de github.base_ref (não há PR).
+        run: |
+          PREV="$(git describe --tags --abbrev=0 "${GITHUB_SHA}^" 2>/dev/null || echo origin/main)"
+          bash .claude/skills/schematize-engineering/scripts/check-diff.sh "$PREV"
       - name: Índice de microfunções atualizado (§39)
         env:
           # Sem estes dois o gate NAO roda — e nao rodar REPROVA. Gate desarmado em silencio
@@ -57,10 +61,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-      - name: "Smoke + security + authz + hardening (PR — testes/Q.A.: schematize-qa)"
+      - name: "Smoke + security + authz + hardening (testes/Q.A.: schematize-qa)"
         run: |
+          # LIGUE ao CLI do projeto. Enquanto o placeholder existir o passo REPROVA (verde de mentira é vetado).
+          echo "ERRO: ligue o test kit do <projeto>_ops (smoke/security/authz/hardening) antes de usar este template" >&2
+          exit 1
           # <projeto> test smoke && <projeto> test security && <projeto> test authz && <projeto> test hardening
-          echo "ligue ao CLI <projeto>_ops aqui"
       - name: Smoke self-check (anti verde-mentiroso — schematize-qa)
         run: bash .claude/skills/schematize-qa/scripts/smoke-selfcheck.sh --self-check
 
@@ -71,5 +77,5 @@ jobs:
       - name: Trivy fs
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with: { scan-type: fs, severity: HIGH,CRITICAL, exit-code: '1' }
-      - name: Gitleaks
+      - name: Gitleaks   # em repo de ORGANIZAÇÃO exige GITLEAKS_LICENSE (secret); sem licença, troque por `gitleaks detect` via binário
         uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9

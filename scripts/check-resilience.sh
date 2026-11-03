@@ -7,7 +7,10 @@
 #   1 boot_sem_dependencias   2 dependencia_indisponivel (+ nome da dep na mesma linha)
 #   3 restart_fila_cheia      4 reentrega_idempotente     5 dlq_envenenada
 #   6 shutdown_gracioso       7 crash_entre_persistir_e_confirmar
-#   `dependencies: []` dispensa os casos 2-5 (sem vizinho, sem fila); 1, 6 e 7 continuam exigidos.
+#   `dependencies: []` dispensa os casos 2-5 (sem vizinho, sem fila); 1, 6 e 7 continuam exigidos —
+#   EXCETO se o serviço consome fila externa: `consumes_queue: true` no resilience.yml mantém 3, 4 e 5 (DLQ,
+#   idempotência, restart com fila cheia). Só linha que DECLARA teste conta (fn/func/def/function/it/test/
+#   describe/[Fact]/@Test/void/Task): comentário e string solta não.
 # Formato de resilience.yml:  service: ledger \n dependencies: \n   - core \n   - redis
 # Uso: bash scripts/check-resilience.sh <dir-do-servico>      Saída: 0 ok, 1 faltou teste, 2 uso inválido.
 # LIMITAÇÃO: heurística por nome — prova que o teste EXISTE e não está pulado (.skip/ignore/xfail na linha
@@ -28,7 +31,9 @@ while IFS= read -r f; do
   awk -v F="$f" '{
     raw=$0; n=tolower(raw); gsub(/[_ .-]/,"",n)
     skip = (raw ~ /\.skip|@skip|#\[ignore\]|xfail|t\.Skip|@Disabled|xit\(|xtest\(|pending/ || prev ~ /\.skip|@skip|#\[ignore\]|xfail|t\.Skip|@Disabled|@pytest\.mark\.skip|pending/)
-    if (!skip) print F ":" NR ":" n
+    # só conta DECLARAÇÃO de teste (fn/func/def/function/it/test/describe/[Fact]/@Test/void/Task); comentário e string solta não
+    decl = (raw ~ /(^|[^[:alnum:]_])(fn|func|def|function|it|test|describe|specify|scenario)[ (\t"\047]/ || raw ~ /\[(Fact|Theory|Test)|@Test|void [A-Za-z_]|Task [A-Za-z_]/) && raw !~ /^[ \t]*(\/\/|#|\*|\/\*|--)/
+    if (!skip && decl) print F ":" NR ":" n
     prev=raw }' "$f"
 done < <(find "$D" -type f \( -iname '*test*' -o -iname '*spec*' -o -path '*/tests/*' -o -path '*/test/*' -o -path '*/__tests__/*' \) \
   -not -path '*/node_modules/*' -not -path '*/.git/*' -not -path '*/target/*' -not -path '*/vendor/*' -not -name 'resilience.yml' -not -name '*.md' | sort) > "$LINES"
@@ -44,6 +49,8 @@ if [ "$M" -gt 0 ]; then
     if grep -- "dependenciaindisponivel" "$LINES" | grep -q -- "$dn"; then N=$((N+1))
     else echo "FAIL: falta teste '2 dependencia_indisponivel' para a dependência '$d' (timeout/5xx/recusada -> fila, serviço vivo)"; rc=1; fi
   done
+fi
+if [ "$M" -gt 0 ] || grep -Eq '^consumes_queue:[[:space:]]*true' "$Y"; then
   exige "restartfilacheia" "3 restart_fila_cheia (drena sem perda/duplicata)"
   exige "reentregaidempotente" "4 reentrega_idempotente"
   exige "dlqenvenenada" "5 dlq_envenenada (N tentativas, fila não trava)"
