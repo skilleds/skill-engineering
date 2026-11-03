@@ -7,7 +7,7 @@ Use **esta** quando o projeto não é de uma linguagem específica, ou quando qu
 ## Instalar
 
 ```bash
-git clone https://github.com/schematizeme/skill-engineering.git
+git clone https://github.com/skilleds/skill-engineering.git
 cd skill-engineering && ./install.sh          # no projeto atual
 # ./install.sh ~                               # global (~/.claude, todos os projetos)
 ```
@@ -16,7 +16,7 @@ Ou baixe o `.zip` da última release e descompacte em `.claude/skills/`:
 
 ```bash
 curl -L -o schematize-engineering.zip \
-  https://github.com/schematizeme/skill-engineering/releases/latest/download/skill-engineering.zip
+  https://github.com/skilleds/skill-engineering/releases/latest/download/skill-engineering.zip
 unzip schematize-engineering.zip -d .claude/skills/
 ```
 
@@ -24,7 +24,7 @@ Depois, copie a regra sempre-on: `.claude/skills/schematize-engineering/assets/C
 
 ## Comandos
 
-`/eng-help` · `/eng-load` · `/eng-claude` · `/eng-index` · `/eng-review` · `/eng-scan` · `/eng-plan` · `/eng-refactor` · `/eng-audit` · `/eng-orchestrate` · `/eng-overdev` · `/eng-ops` · `/eng-iam` · `/eng-cc` · `/eng-handoff`.
+`/eng-help` · `/eng-load` · `/eng-claude` · `/eng-index` · `/eng-review` · `/eng-scan` · `/eng-plan` · `/eng-refactor` · `/eng-audit` · `/eng-orchestrate` · `/eng-overdev` · `/eng-ops` · `/eng-iam` · `/eng-cc` · `/eng-handoff` · `/eng-report`.
 
 ## Formato
 

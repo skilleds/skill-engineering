@@ -182,7 +182,7 @@ Prioridades, em ordem de desempate:
     → Archive é parte da entrega. Sempre gerado. Tarefa sem archive não está pronta (§35).
 
 29. **Merge direto na `main` / force push em branch protegida / pular o PR e o review.**
-    → Trunk-based com PR, CI verde, CODEOWNERS (§24).
+    → Trunk-based com PR, gate local verde, CODEOWNERS (§24); CI remoto só na tag (piso 27).
 
 30. **Desligar rate limit, validação de payload, ou security scan "temporariamente".**
     → "Temporário" vira permanente. Não se desliga piso de segurança (§12, §13).
@@ -262,8 +262,8 @@ Prioridades, em ordem de desempate:
 
 ### CI remoto e microserviço autônomo (pisos 27 e 28)
 
-57. **CI remoto por commit** — workflow com `on: push` em branch, `pull_request` sem filtro, sem `concurrency`/`cancel-in-progress`, cron sem justificativa; agent que dispara ou espera CI a cada commit.
-    → Gate por commit é local (`tools/ci.sh`); CI remoto 1x antes do hml, a pedido ou em tag; `workflow_dispatch` + `push: tags` (piso 27; `check-ci-triggers.sh`).
+57. **CI remoto por commit** — workflow com `pull_request`/`pull_request_target` (qualquer filtro), `on: push` em branch (inclusive `branches-ignore`/`tags-ignore`), `workflow_run`, `merge_group`, sem `concurrency`/`cancel-in-progress`, cron sem justificativa; "check obrigatório no PR"; preview automático por PR; agent que dispara ou espera CI a cada commit.
+    → Gate por commit é local (`tools/ci.sh`); CI remoto 1x antes do hml, a pedido ou em tag; `workflow_dispatch` + `push: tags [hml-*, v*]` (piso 27; `check-ci-triggers.sh`).
 58. **Microserviço que crasha, não sobe ou perde dado quando o vizinho cai** — boot que consulta outro serviço, exceção não tratada na chamada, evento descartado no erro.
     → Autônomo com início/meio/fim; item vai para a fila durável e o serviço segue saudável (piso 28; `testes.md`).
 59. **Fila em memória** (lista/canal/queue do processo) como buffer de dado que não pode ser perdido.

@@ -32,21 +32,19 @@
 
 ---
 
----
-
 ## 21. Infraestrutura e Deploy
 
 **MUST**
-- Kubernetes + Helm.
+- Alvo de execução: **VPS + systemd hardened operada pelo ops** (padrão da casa, `ops.md`) ou **Kubernetes + Helm** quando houver ADR (o ops vira operator e o piso 24 vale para ele). Os rollouts de §21.1 valem nos dois (na VPS: clone novo do SHA + troca atômica do symlink).
 - IaC: Terraform ou OpenTofu.
-- CI/CD: GitHub Actions.
+- CI/CD: GitHub Actions, **só** sob `workflow_dispatch` e tags `hml-*`/`v*` (política abaixo, piso 27).
 - Ambientes isolados: `dev` (local), `hml`/`staging` (homologação), `production`/`prd`.
 - Promoção entre ambientes por **artefato imutável** (mesma imagem, commit SHA rastreável).
 - **Fluxo de promoção fixo, sem atalho:** `desenvolvimento local → teste local (verde) → GitHub → hml → prd`. Nada pula etapa; **nada vai direto pra hml/prd**.
 - **VETADO editar código direto no servidor (hml/prd).** O servidor é **imutável por edição manual** — recebe só artefato promovido do git. Precauções: filesystem read-only, **drift detection** (recusa/alerta divergência com o git), acesso de escrita = break-glass auditado. Hotfix segue o mesmo fluxo, acelerado. Detalhe e o control plane em **`references/ops.md`**.
 - **Toda operação no servidor passa pelo `<projeto>_ops`** (§2, `references/ops.md`): install/update/config/migrate/rollback/troubleshoot — nunca à mão. Instalação **paralela por padrão** (= `nproc`); falha no paralelo = serviços não independentes → corrigir a independência é prioridade máxima (piso 10).
 
-- **Política de CI remoto (piso 27): o CI NÃO roda por commit.** Custo estratosférico: o gate por commit é **local** (`tools/ci.sh` e equivalentes, custo zero) e os commits se acumulam. O CI remoto roda **só** (a) **uma vez antes de promover para hml**, sobre tudo o que acumulou; (b) quando o usuário pedir; (c) em release/tag. Gatilho padrão: `workflow_dispatch` + `push: tags` (`hml-*`, `v*`). **VETADO** `on: push` em branch e `pull_request` sem filtro como default; `cron` só com justificativa escrita. Todo workflow leva `concurrency` com `cancel-in-progress: true` e `paths-ignore` para docs/md. Nenhum agent dispara nem espera CI remoto por commit; o ops dispara o CI **UMA vez por promoção a hml**. Gate: `scripts/check-ci-triggers.sh`.
+- **Política de CI remoto (piso 27): o CI NÃO roda por commit NEM por PR.** Custo estratosférico: o gate por commit é **local** (`tools/ci.sh`, pre-commit/pre-push; custo zero) e os commits se acumulam; **não existe "check obrigatório no PR"**. O CI remoto roda **só** (a) **uma vez antes de promover para hml** (tag `hml-*`), sobre tudo o que acumulou; (b) quando o usuário pedir (`workflow_dispatch`); (c) em release/tag (`v*`). Gatilho padrão de todo template: `workflow_dispatch` + `push: tags: ["hml-*", "v*"]`. **VETADO** `pull_request`/`pull_request_target` (qualquer filtro), `push` em branch (inclusive `branches-ignore`/`tags-ignore`), `workflow_run`, `merge_group`, e `schedule` sem justificativa/ADR; exceção só em `ci-triggers-allow.txt` versionado com justificativa. Todo workflow leva `concurrency` com `cancel-in-progress: true` e `paths-ignore` para docs/md. Nenhum agent dispara nem espera CI remoto por commit; o ops dispara o CI **UMA vez por promoção a hml**. Gate: `scripts/check-ci-triggers.sh`; gate local do projeto: `assets/ci/ci.sh`.
 
 ### 21.1 Estratégia de Deploy
 
@@ -64,8 +62,8 @@
 ### 21.2 Preview Environments
 
 **SHOULD**
-- PRs em serviços principais geram ambiente efêmero automaticamente.
-- Destruído ao merge ou após X dias de inatividade.
+- Preview **sob demanda**: `workflow_dispatch` (a pedido do usuário) com branch/SHA cria o ambiente efêmero. **Nunca automático por PR** (piso 27).
+- Destruído após o uso ou após X dias de inatividade.
 
 ### 21.3 Build/teste em máquina dev/hml e higiene (piso 29)
 
@@ -73,8 +71,6 @@
 - Havendo máquina dev/hml de build/teste (`<projeto>_ops/maquinas.yml`), build e teste rodam nela; sem ela, build local. Fluxo e limites da exceção: `ops.md` §9.
 - Higiene após todo ciclo de teste (local e remoto) com `scripts/higiene.sh`: dry-run, depois `--apply`; limiar de disco (ex.: 80%) higieniza antes de novo build.
 - O que a máquina de build produziu não é promovível: promoção a hml/prd parte de commit + push + build limpo do git.
-
----
 
 ---
 
@@ -99,11 +95,9 @@ GitFlow (`develop`) é opcional e exige justificativa — só vale a pena em tim
 - Tamanho alvo: ≤ 400 linhas alteradas.
 - ≥ 1 reviewer (≥ 2 para `domain`, schema, segurança).
 - **CODEOWNERS obrigatório.**
-- CI verde obrigatório.
+- **Gate local verde** obrigatório antes do push (pre-commit/pre-push, `assets/ci/ci.sh`); o CI remoto roda na tag `hml-*` antes de promover (piso 27) — **não** como check de PR.
 - Squash merge na `main`.
 - **Merge direto na `main` é VETADO.** Force push em branch protegida idem (§37).
-
----
 
 ---
 
@@ -114,8 +108,6 @@ GitFlow (`develop`) é opcional e exige justificativa — só vale a pena em tim
 - `CODEOWNERS` configurado.
 - Documentação de **oncall** definida.
 - Contato de escalação documentado no README.
-
----
 
 ---
 
@@ -149,8 +141,6 @@ GitFlow (`develop`) é opcional e exige justificativa — só vale a pena em tim
 
 ---
 
----
-
 ## 27. ADR — Architecture Decision Records
 
 Toda decisão arquitetural relevante vira ADR.
@@ -172,8 +162,6 @@ Formato MADR. Status: `proposed`, `accepted`, `deprecated`, `superseded by NNNN`
 > veredito. O *como* é lá.
 
 **Quando criar:** escolha de banco/broker/linguagem, padrão arquitetural, mudança de contrato público, qualquer desvio deste documento (exceto itens VETADO, que não admitem exceção).
-
----
 
 ---
 

@@ -24,15 +24,11 @@ README mínimo: o que é, como rodar, como testar, como deployar, dependências,
 
 ---
 
----
-
 ## 31. Feature Flags
 
 Obrigatório para features críticas, migrações e rollouts graduais.
 Capacidades: rollout por % de tráfego, segmentação por tenant/usuário, kill switch, expiração de flag.
 Sugestões: Unleash, OpenFeature, GrowthBook.
-
----
 
 ---
 
@@ -80,8 +76,6 @@ Sessões longas de agente degradam quando o contexto enche: o modelo "esquece" d
 
 ---
 
----
-
 ## 35. Definition of Done
 
 Uma task está pronta quando, cumulativamente:
@@ -109,7 +103,7 @@ Uma task está pronta quando, cumulativamente:
 - [ ] Relatório de ritmo inclui o custo do período e o acumulado (`<projeto>_archive/custos/`, estimativa API-equivalente; `orquestracao.md` §9.8)
 - [ ] Documentação atualizada (README, ADR, runbook se aplicável)
 - [ ] Smoke tests executados em staging **(com asserção de conteúdo e self-check anti verde-mentiroso — skill `schematize-qa`)**
-- [ ] CI verde, code review aprovado
+- [ ] **Gate local verde; CI remoto da tag `hml-*` verde antes de promover a hml (piso 27); code review aprovado (não existe check de PR)**
 - [ ] **Archive de chat/task gerado e commitado (§28) — gate rígido, não opcional**
 - [ ] Feature flag configurada (se aplicável)
 - [ ] CODEOWNERS aplicável revisou
@@ -118,15 +112,11 @@ Uma task está pronta quando, cumulativamente:
 
 ---
 
----
-
 ## 36. Evolução
 
 - Refactors incrementais. Big-bang rewrite exige ADR e plano de rollback.
 - Toda migração de runtime/framework tem flag de coexistência.
 - DDD e hexagonal podem ser adotados progressivamente — comece pelas bordas e pelos domínios mais complexos.
-
----
 
 ---
 
@@ -184,8 +174,6 @@ O código diz **como** está agora; o índice diz **o que existe, onde mora e co
 - A versão **OPERACIONAL que o app desenha** é a de `.schematize/grafos/` (`GRAFO_GLOBAL.md` + `<servico>.md`); o archive espelha, não substitui.
 
 > O grafo responde "isso já existe? onde? como faço X? o que quebra se eu mexer aqui?" sem precisar reler o código. Se a resposta exige caçar no código, o grafo falhou — ou está desatualizado, e isso é bug.
-
----
 
 ---
 

@@ -2,6 +2,31 @@
 
 Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 com versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.35.0] — 2026-11-03
+### Alterado (decisão do usuário: o CI de PR sai de vez)
+- Piso **27** reescrito (`assets/CLAUDE.md`, `CORE.md`, `operacao.md` §21/§21.2/§24, `entrega.md` DoD, `anti-padroes.md` 29/57, `SKILL.md`, template de CI): **VETADO `pull_request`/`pull_request_target` com QUALQUER filtro**, `push` em branch (inclusive `branches-ignore`/`tags-ignore`), `workflow_run`, `merge_group`, `schedule` sem justificativa/ADR. Gatilho padrão: `workflow_dispatch` + `push: tags [hml-*, v*]` + `concurrency`. Não existe "check obrigatório no PR": o gate por commit é local; CI remoto só antes do hml, em release/tag ou a pedido. Preview por PR substituído por preview sob demanda (`workflow_dispatch`). DoD: "gate local verde + CI da tag `hml-*` antes de promover".
+- Contradições do G1 resolvidas: P0-1 (PR/preview/"CI verde"), P1-2 (piso 12 ganha exceções nominais `~/.claude/**`, `~/.config/schematize/**`, worktrees gerenciados, `mktemp` em `$TMPDIR`), P1-3 (redeploy = clone novo do SHA em `/<app>/releases/<sha>/` + troca atômica do symlink `current`; pisos 16/23, `ops.md` §1/§2, `/eng-ops`), P1-4 (Kubernetes + Helm vira alvo opcional por ADR; padrão é VPS + systemd via ops), P1-10 (canal único da IA ao ops: `ssh` com chave exclusiva e `command=` forçado, ou API com mTLS), P2 (piso 17 aponta para o 21: senha é fallback, passkey é o padrão).
+- Piso 22 documenta a trava mecânica (`check-deploy-git.sh`: remote, árvore limpa, HEAD == upstream) no gate local e no `gate.sh` do overdev (`/eng-overdev`).
+### Adicionado
+- `scripts/check-ci-triggers.sh` endurecido (+ teste com 28 casos adversariais): reprova PR em qualquer forma, `push` sem `tags:` positivo ou com `branches`/`*-ignore`, `workflow_run`, `merge_group`, eventos fora da allowlist, gatilho em lista/flow/escalar/aspas/multilinha, âncoras e merge-key no `on:`; exceção só por `ci-triggers-allow.txt` versionado com justificativa.
+- `scripts/check-fidelidade.sh` (+ teste): cada piso 13, 18-29 precisa aparecer no `CORE.md` com seus vetos-chave (e a âncora ainda existir na fonte); frases obsoletas reprovam. Integrado ao `core-md.test.sh` e ao `tools/ci.sh`.
+- `tools/sync-herdados` (wrapper) + `sync-herdados.mjs --dry-run` + blocos **obrigatórios** (`tools/herdados-obrigatorios.json`, fonte `assets/herdados/pisos-22-29.md`): propaga os pisos 22–29 a SKILL.md e `assets/CLAUDE.md` das 47 filhas sem release; idempotente; `--check` reprova filha desatualizada (modo `aviso` até o sync inicial; depois `erro`). Testes em diretório temporário.
+- `assets/ci/ci.sh`: gate local por commit/pre-push pronto para o projeto (P1-11). `eng-review`, `eng-ops` (§2.5 gate da IA) e `eng-overdev` passam a cobrar os pisos 22–29 (P1-9, P1-5).
+### Corrigido
+- `check-deploy-git.sh`: agora pega sftp, `kubectl/oc cp`, `| ssh`, ssh com stdin/heredoc, ssh mutável (sed -i, tee, redirect, systemctl, SQL, docker, rm/mv), psql/mysql remotos, docker context/-H/DOCKER_HOST, `git bundle`, `scp -r`, rsync `--rsh`/`-e`/`::`, ansible; exceção escopada do piso 29 via `maquinas.yml` (host + workspace); 19 casos novos.
+- `check-diff.sh`: cobre `.ex/.exs/.cs/.zig/.rb/.kt/.swift/.dart/.py` com SQL interpolado, erro engolido e teste pulado; o modo `HEAD` (pre-commit) comparava HEAD com HEAD e dava verde vazio — agora olha o que está staged (`--cached` idem).
+- `check-resilience.sh`: só linha que DECLARA teste conta (comentário/string não dá verde); `consumes_queue: true` mantém os casos 3-5 com `dependencies: []`.
+- `higiene.sh`: `--help`/`-h` (exit 0) e mensagem de uso em argumento desconhecido (exit 2).
+- Template de CI: passo do test-kit reprova até ser ligado; diff da tag usa a tag anterior (sem `github.base_ref`); nota da licença do gitleaks. README: org `skilleds` e `/eng-report`.
+- `CORE.md` (v0.35.0): 3757 bytes (folga 339 B), 40 linhas; ganha SMS/push, cap por execução, `git bundle`, guardrails do ops, canal `ssh vps "ops <op>"`; linha final cobre pisos 13, 18-29. `core-md.test.sh` agora exige ≤ 3846 B e ≤ 55 linhas.
+### Pendência (on-hold `[~]`)
+- [~] App: hook de parada (Stop) que imponha o piso 22 (HEAD == origin) sozinho; hoje a trava é o `check-deploy-git.sh` no gate.
+- [~] App: reinstalar o `CORE.md` em `~/.claude/CLAUDE.md` a cada release (P0-4: a cópia instalada estava defasada).
+- [~] Política Node "só frontend" (sem decisão do usuário): não tocada.
+- [~] P1-13 (SKILL.md/CLAUDE.md pesados: piso em ≤3 linhas com ponteiro) e P1-14 (IDs de modelo `gpt-5.6-terra`, "Fable 5/Opus 4.6+", nomes de tool `ListAgents`/`TaskStop` fora da norma): refatoração ampla/fatos voláteis sem fonte oficial verificada; centralizar em `agentes.toml`/`schematize-models` num release próprio.
+- [~] Org das skills: READMEs das outras skills ainda apontam `schematizeme`; o origin real é `skilleds` (decisão/lote do orquestrador).
+- [~] P2: `check-ritmo.sh` ainda só confere o carimbo (não a existência do relatório commitado); lacunas de piso 28 (ordem/backpressure de eventos), retenção de `relatorios/`, PII em leitura pelo ops.
+
 ## [0.34.0] — 2026-11-01
 ### Adicionado
 - Piso **29** (build/teste em máquina de dev/hml; higiene obrigatória) em `assets/CLAUDE.md`. (a) Detecção por inventário `<projeto>_ops/maquinas.yml` (nome, host, `env` ∈ {dev,hml}, `papel: build-teste`, `ponte_direta: true`, workspace remoto, limites de disco/CPU): havendo máquina, build e teste rodam nela; senão build local. (b) **Exceção ESCOPADA aos pisos 14/23/24** (marcada FLAG para o usuário): ponte direta e alteração na máquina só para build/teste, dentro do workspace remoto; continua vetado prd, deploy oficial por ponte, segredo real de prd, dado/volume/banco/`.env` de serviços ali, efeito externo real; o build por ponte NÃO é promovível (commit+push+build limpo do git). Pisos 14, 23 e 24 ganharam nota apontando para o 29, sem alargar. (c) Higiene após cada ciclo (local e remoto), dry-run por padrão. (d) Disco acima do limiar: higieniza antes de novo build.

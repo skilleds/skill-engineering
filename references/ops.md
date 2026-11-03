@@ -9,12 +9,12 @@
 Ambientes isolados: **dev** (local) · **hml** (homologação/staging) · **prd** (produção). O caminho de qualquer mudança é **fixo e sem atalho**:
 
 ```
-desenvolvimento local  →  teste local (verde)  →  GitHub (merge)  →  hml  →  prd
+desenvolvimento local  →  teste local (verde)  →  GitHub (push em main)  →  hml  →  prd
 ```
 
 - **Nada pula etapa.** Nunca vai direto pra hml ou prd. hml só recebe o que está no GitHub e passou no teste local; prd só recebe o que foi homologado em hml.
 - **VETADO editar código direto no servidor (hml/prd).** O servidor é **imutável por edição manual** — recebe apenas **artefato promovido do git** (mesma imagem/commit SHA, §21). "Editei direto no prd pra resolver rápido" é o anti-padrão que esta reference existe pra matar.
-- **Canal único de código = git (pisos 22/23).** **VETADO** `scp`, `rsync`, `tar | ssh`, `docker save | load`, `git bundle` ad-hoc, editar arquivo remoto e colar patch na VPS. Só o ops, **na VPS**, busca do remoto git (`fetch` + `checkout` de SHA/tag exato, verificado). Código não pushado não é deploy-ável.
+- **Canal único de código = git (pisos 22/23).** **VETADO** `scp`, `rsync`, `tar | ssh`, `docker save | load`, `git bundle` ad-hoc, editar arquivo remoto e colar patch na VPS. Só o ops, **na VPS**, busca do remoto git (`clone`/`fetch` de SHA/tag exato, verificado, em diretório novo + troca atômica). Código não pushado não é deploy-ável.
 - **Hotfix segue o mesmo fluxo, acelerado:** branch → teste local → git → hml → prd. Urgência **não** autoriza mão no servidor.
 - **Única exceção escopada:** a máquina de build/teste dev/hml do piso 29, só para build/teste e dentro do workspace de build (§9); nunca deploy, nunca prd.
 - **Precauções concretas:** deploy só aceita artefato com **proveniência git** (commit SHA); filesystem **read-only** em hml/prd; **drift detection** (o ops recusa/alerta divergência com o git); acesso de escrita = **exceção auditada** (break-glass no archive), nunca o fluxo.
@@ -25,7 +25,7 @@ O ops provisiona num **workspace por aplicação**, espelhando no servidor a con
 
 - **`/<app>/` é a raiz da aplicação no servidor.** O ops **cria** essa pasta e **clona os repos dentro** dela: `/<app>/<app>_<contexto>` (ex.: `/payle/payle_core`, `/payle/payle_storage`, `/payle/payle_ops`). Nada de repo espalhado pelo host.
 - **`/<app>/.env` é o SEEDER GLOBAL — a fonte única.** Toda a configuração da aplicação inteira parte desse arquivo. É a **única** fonte de verdade de config em runtime; **nenhum serviço tem config à parte** fora do seed. (Segredo real via secret manager referenciado pelo seed — segredo nunca versionado no repo.)
-- **Redeploy é DESTRUTIVO na aplicação, a partir do seed.** Todo (re)deploy: **apaga a implantação anterior** e **recria um clone novo, zerado**, configurado **exclusivamente** a partir de `/<app>/.env`. Sem patch in-place, sem estado acumulado, sem drift. O estado da app é 100% derivado do seed → **idempotente e reprodutível**: `ops redeploy` sempre entrega o mesmo resultado, do zero.
+- **Redeploy é DESTRUTIVO na aplicação, a partir do seed.** Todo (re)deploy **clona o SHA/tag exato num diretório NOVO** (`/<app>/releases/<sha>/`, zerado, configurado **exclusivamente** a partir de `/<app>/.env`), **troca o symlink `/<app>/current` de forma atômica** e reinicia/rola os serviços (rolling/blue-green, `operacao.md` §21.1 — sem downtime), mantendo só a release anterior para rollback. Sem patch in-place, sem estado acumulado, sem drift. O estado da app é 100% derivado do seed → **idempotente e reprodutível**: `ops redeploy` sempre entrega o mesmo resultado, do zero.
 - **"Destrutivo" é a APLICAÇÃO, nunca os DADOS.** O que é destruído e recriado: o clone dos repos, binários/build, config renderizada, o processo. O que é **preservado**: **dados persistentes** (banco, volumes, uploads, filas), que só mudam por **migration reversível** (com `down` + backup). Apagar dados é comando **separado e gated** (`ops reset`), **só em dev/hml**, com confirmação explícita — **nunca** em prd.
 
 ## 3. Isolamento por usuário — um user + systemd por serviço
@@ -81,7 +81,7 @@ Se a instalação/subida **paralela falha** (race, porta/arquivo/lock disputado,
 ### 8.1 Bootstrap (o único contato direto permitido)
 1. Atualizações automáticas do SO (`unattended-upgrades`/apt no Debian) — configuradas uma vez, sem a IA decidir pacote a pacote.
 2. Instalar o mínimo para rodar o ops (`git` e afins) e executar **`git clone` do repo do ops**. **Nada mais** por `ssh` direto.
-3. A partir daí: a IA invoca o ops (CLI/API local da VPS, autenticada, identidade `agent`); o ops clona/atualiza os demais repos do git (`/<app>/<app>_<ctx>`).
+3. A partir daí: a IA invoca o ops pelo **canal único**: `ssh` com chave exclusiva do agente e `command=` forçado no `authorized_keys` (só executa o CLI do ops — `ssh vps "ops <op> …"` é a ÚNICA forma permitida; shell interativo e comando livre vetados) **ou** API do ops com mTLS, identidade `agent`; o ops clona/atualiza os demais repos do git (`/<app>/<app>_<ctx>`).
 
 ### 8.2 Catálogo mínimo de capacidades do ops
 - **Leitura (rica e segura):** logs por serviço com filtro/tail · status/health · métricas · sistema (CPU/RAM/disco/rede/portas/processos/systemd) · versões (SHA em execução por serviço) · config renderizada **com segredo mascarado** · conexões · filas · jobs · diff/drift vs git · banco **somente-leitura** por **queries nomeadas e versionadas no git** (nunca SQL livre).
