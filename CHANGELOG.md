@@ -6,7 +6,7 @@ com versionamento [SemVer](https://semver.org/lang/pt-BR/).
 ### Corrigido
 - `check-ritmo.sh`, `check-deploy-git.sh` e `check-external-effects.sh` citavam `references/orquestracao.md` cru; como são scripts herdados pelas filhas, o lint acusava ponteiro morto. Agora citam `schematize-engineering` → `references/orquestracao.md` explicitamente.
 - Porquê: a cópia herdada em `skill-qa` quebrava o lint do catálogo.
-
+- `higiene.sh`: `rm -rf --one-file-system -- "${d:?}"` (variável vazia aborta em vez de apagar o caminho errado).
 ## [0.35.0] — 2026-11-03
 ### Alterado (decisão do usuário: o CI de PR sai de vez)
 - Piso **27** reescrito (`assets/CLAUDE.md`, `CORE.md`, `operacao.md` §21/§21.2/§24, `entrega.md` DoD, `anti-padroes.md` 29/57, `SKILL.md`, template de CI): **VETADO `pull_request`/`pull_request_target` com QUALQUER filtro**, `push` em branch (inclusive `branches-ignore`/`tags-ignore`), `workflow_run`, `merge_group`, `schedule` sem justificativa/ADR. Gatilho padrão: `workflow_dispatch` + `push: tags [hml-*, v*]` + `concurrency`. Não existe "check obrigatório no PR": o gate por commit é local; CI remoto só antes do hml, em release/tag ou a pedido. Preview por PR substituído por preview sob demanda (`workflow_dispatch`). DoD: "gate local verde + CI da tag `hml-*` antes de promover".

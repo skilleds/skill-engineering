@@ -89,7 +89,7 @@ remover() {  # remover <caminho> : mede, loga e (com --apply) apaga
   sz="$(du -sb "$d" 2>/dev/null | cut -f1)"; sz="${sz:-0}"
   TOTAL=$((TOTAL+sz)); COUNT=$((COUNT+1))
   echo "  $MODE: $d ($sz bytes)"
-  if [ "$APPLY" -eq 1 ]; then rm -rf --one-file-system -- "$d" 2>/dev/null || { echo "  falhou: $d"; FAILS=$((FAILS+1)); return; }; fi
+  if [ "$APPLY" -eq 1 ]; then rm -rf --one-file-system -- "${d:?}" 2>/dev/null || { echo "  falhou: $d"; FAILS=$((FAILS+1)); return; }; fi
   log "$MODE" "$d" "$sz"
 }
 
