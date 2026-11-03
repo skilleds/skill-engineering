@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # check-diff.sh — gate determinístico de padrões (`padroes-codigo.md`, §35, §37) sobre o diff.
-# Uso: bash scripts/check-diff.sh [base-ref]   (default: origin/main)
+# Uso: bash scripts/check-diff.sh [base-ref|--cached]   (default: origin/main)
+#   base-ref = HEAD (ou --cached, ou qualquer ref que resolva para o MESMO commit do HEAD): modo "pre-commit" —
+#   olha o que está staged/modificado contra HEAD (`git diff HEAD`), nunca HEAD contra HEAD (que dava verde vazio).
+#   Linguagens: Go, Rust, TS/JS, Elixir (.ex/.exs), C# (.cs), Zig, Ruby, Kotlin, Swift, Dart, Python.
 # Sai 1 se achar qualquer violação de PISO; imprime achados com arquivo:linha.
 #
 # Cobre o que dá pra checar por regex/contagem. O julgamento fino (semântica de
@@ -11,6 +14,7 @@
 # primeiro problema e reportaria um, escondendo os outros. Por isso `set -uo pipefail` sem `-e`.
 set -uo pipefail
 BASE="${1:-origin/main}"
+[ "$BASE" = "--cached" ] && BASE="HEAD"
 FAIL=0
 RED=$'\033[0;31m'; YLW=$'\033[0;33m'; GRN=$'\033[0;32m'; RST=$'\033[0m'
 
@@ -20,10 +24,18 @@ if ! git rev-parse --verify -q "$BASE^{commit}" >/dev/null 2>&1; then
   exit 1
 fi
 
-# Arquivos de código alterados (exclui exceções de padroes-codigo.md).
-mapfile -t FILES < <(git diff --name-only "$BASE"...HEAD 2>/dev/null \
-  | grep -E '\.(go|rs|ts|tsx|js|mjs|jsx)$' \
-  | grep -vE '(_test\.|\.test\.|/migrations/|/generated/|\.gen\.|/mocks?/)' || true)
+# Modo pre-commit: base == HEAD (mesmo commit) => árvore de trabalho/staged contra HEAD; senão merge-base...HEAD.
+PRECOMMIT=0
+if [ "$(git rev-parse "$BASE^{commit}")" = "$(git rev-parse HEAD 2>/dev/null)" ]; then PRECOMMIT=1; fi
+changed() { # lista os arquivos alterados (adicionados/copiados/modificados/renomeados), 1 por linha
+  if (( PRECOMMIT )); then git diff --name-only --diff-filter=ACMR HEAD 2>/dev/null
+  else git diff --name-only --diff-filter=ACMR "$BASE"...HEAD 2>/dev/null; fi
+}
+CODE_EXT='go|rs|ts|tsx|js|mjs|jsx|ex|exs|cs|zig|rb|kt|kts|swift|dart|py'
+# Arquivos de código alterados (exclui exceções de padroes-codigo.md: testes, migrations, gerados, mocks).
+mapfile -t FILES < <(changed \
+  | grep -E "\\.($CODE_EXT)\$" \
+  | grep -vE '(_test\.|\.test\.|_spec\.|(Tests?|Spec)\.(cs|kt|swift)$|\.Tests?/|/migrations/|/db/migrate/|/generated/|\.gen\.|\.g\.dart$|\.freezed\.dart$|/mocks?/)' || true)
 
 block() { echo "${RED}✗ BLOQUEIA${RST} $1"; FAIL=1; }
 warn()  { echo "${YLW}⚠ ATENÇÃO${RST} $1"; }
@@ -57,7 +69,7 @@ done
 #   ERRO DE REGEX EM VERDE — foi assim que o piso de `<img>` sem alt ficou morto desde que existe
 #   (A3/A3b da vistoria de 2026-08-21). Agora: 0 = achou, 1 = nao achou, >=2 = ERRO, e erro FALHA.
 scan() {
-  local re="$1" msg="$2" flavor="${3:-ere}" hit rc
+  local re="$1" msg="$2" flavor="${3:-ere}" ext="${4:-}" hit rc
   local -a gflags
   case "$flavor" in
     --perl|perl) gflags=(-nP) ;;
@@ -65,6 +77,7 @@ scan() {
   esac
   for f in "${FILES[@]}"; do
     [[ -f "$f" ]] || continue
+    [[ -z "$ext" || "$f" =~ \.($ext)$ ]] || continue
     hit=$(grep "${gflags[@]}" "$re" "$f" 2>/dev/null); rc=$?
     if (( rc >= 2 )); then
       block "scripts/check-diff.sh — grep saiu $rc na regra '"'"'$msg'"'"' (regex invalida ou arquivo ilegivel): $re"
@@ -86,15 +99,32 @@ scan '(query|exec|raw)\(\s*[`"'\''].*\$\{|"\s*\+\s*.*(req|input|param|body)' 'po
 scan 'catch\s*\(\s*\)\s*\{\s*\}|except\s*:\s*pass|catch\s*\{\s*\}' 'erro engolido (§37)'
 scan '@ts-ignore|: any\b|interface\{\}' 'tipo silenciado (any/@ts-ignore/interface{}) (§37)'
 scan '\.(skip|only)\(|t\.Skip\(|xit\(|@Ignore' 'teste pulado/silenciado (§37)'
+# Regras equivalentes por linguagem do rol (SQL interpolado, erro engolido, teste pulado).
+scan '(Repo\.query!?|SQL\.query!?|fragment)\(.*#\{' 'SQL interpolado em Elixir (#{}) — use parâmetros/fragment com ? (§10/§37)' ere 'ex|exs'
+scan 'rescue[[:space:]]+_[[:space:]]*->[[:space:]]*(:ok|nil)|catch[[:space:]]+_,[[:space:]]*_[[:space:]]*->[[:space:]]*(:ok|nil)' 'erro engolido em Elixir (rescue _ -> :ok) (§37)' ere 'ex|exs'
+scan '@tag[[:space:]]+(:skip|skip:)' 'teste pulado em Elixir (@tag :skip) (§37)' ere 'ex|exs'
+scan '(FromSqlRaw|ExecuteSqlRaw|SqlQueryRaw|SqlQuery|CommandText)[^;]*(\$"|"[[:space:]]*\+)' 'SQL interpolado/concatenado em C# — use parâmetros (§10/§37)' ere 'cs'
+scan 'catch[[:space:]]*(\([^)]*\))?[[:space:]]*\{[[:space:]]*\}' 'erro engolido em C# (catch vazio) (§37)' ere 'cs|kt|dart|swift'
+scan '\[(Fact|Theory)\(Skip|\[Ignore' 'teste pulado em C# (Skip/Ignore) (§37)' ere 'cs'
+scan 'catch[[:space:]]+unreachable|SkipZigTest' 'catch unreachable / teste pulado em Zig (§37)' ere 'zig'
+scan 'allocPrint\(.*(SELECT|INSERT|UPDATE|DELETE)[[:space:]]' 'SQL montado por allocPrint em Zig — use parâmetros (§10/§37)' ere 'zig'
+scan '(where|find_by_sql|execute|exec_query|select_all|order|joins|pluck)\([[:space:]]*["'\''`].*#\{' 'SQL interpolado em Ruby (#{}) — use placeholders (§10/§37)' ere 'rb'
+scan 'rescue[[:space:]]+nil\b|rescue([[:space:]]+[A-Z][A-Za-z:]*)?([[:space:]]*=>[[:space:]]*[a-z_]+)?[[:space:]]*;[[:space:]]*(nil|end)\b' 'erro engolido em Ruby (rescue nil) (§37)' ere 'rb'
+scan '(^|[[:space:]])(xit|xdescribe|xcontext|pending)[[:space:](]' 'teste pulado em Ruby (xit/pending) (§37)' ere 'rb'
+scan '(rawQuery|execSQL|createNativeQuery|rawInsert|rawUpdate|rawDelete)\([[:space:]]*"[^"]*\$' 'SQL interpolado em Kotlin/Dart ($var) — use bind (§10/§37)' ere 'kt|kts|dart'
+scan '(rawQuery|execute|rawInsert)\([[:space:]]*'\''[^'\'']*\$' 'SQL interpolado em Dart ($var) — use whereArgs (§10/§37)' ere 'dart'
+scan '(sqlite3_exec|\.execute|\.prepare)\(.*\\\(' 'SQL interpolado em Swift (\()) — use bind (§10/§37)' ere 'swift'
+scan 'except[[:space:]]+[A-Za-z_.]+([[:space:]]+as[[:space:]]+[a-z_]+)?:[[:space:]]*pass' 'erro engolido em Python (except X: pass) (§37)' ere 'py'
+scan '\.(execute|executemany)\([[:space:]]*f["'\'']' 'SQL por f-string em Python — use parâmetros (§10/§37)' ere 'py'
 
 # 3) §39 — índice atualizado quando muda funcionalidade
 if (( ${#FILES[@]} > 0 )); then
-  idx=$(git diff --name-only "$BASE"...HEAD 2>/dev/null | grep -E 'INDEX_(GLOBAL|FUNCTIONS)\.md' || true)
+  idx=$(changed | grep -E 'INDEX_(GLOBAL|FUNCTIONS)\.md' || true)
   [[ -z "$idx" ]] && warn "diff mexe em código mas não toca INDEX_*.md — índice atualizado? (§39)"
 fi
 
 # 4) §3 — backend novo em PHP
-php=$(git diff --name-only "$BASE"...HEAD 2>/dev/null | grep -E '\.php$' || true)
+php=$(changed | grep -E '\.php$' || true)
 [[ -n "$php" ]] && block "arquivo PHP no diff — PHP é proibido, migrar (§3.2): $php"
 
 echo

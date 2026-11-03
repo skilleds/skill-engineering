@@ -49,6 +49,31 @@ plant "teste pulado" web/p.ts 'it.skip("x", () => {})' 1 "teste pulado"
 plant "SQL por concatenação" svc/q.go 'db.Query("SELECT * FROM u WHERE id=" + req.ID)' 1 "SQL"
 plant "PHP no diff" legado/x.php '<?php echo 1;' 1 "PHP"
 
+echo "── VERMELHO: demais linguagens do rol (.ex/.exs/.cs/.zig/.rb/.kt/.swift/.dart/.py)"
+plant "Elixir SQL interpolado" lib/q.ex 'Repo.query!("SELECT * FROM u WHERE id = #{id}")' 1 "Elixir"
+plant "Elixir erro engolido" lib/e.exs 'rescue _ -> :ok' 1 "erro engolido"
+plant "C# SQL interpolado" Svc/Q.cs 'var r = db.Users.FromSqlRaw($"SELECT * FROM u WHERE id = {id}");' 1 "C#"
+plant "C# catch vazio" Svc/E.cs 'try { F(); } catch (Exception e) { }' 1 "erro engolido"
+plant "Zig catch unreachable" src/a.zig 'const x = f() catch unreachable;' 1 "Zig"
+plant "Zig catch vazio" src/b.zig 'f() catch {};' 1 "erro engolido"
+plant "Ruby SQL interpolado" app/q.rb 'User.where("id = #{params[:id]}")' 1 "Ruby"
+plant "Ruby rescue nil" app/e.rb 'x = Integer(s) rescue nil' 1 "Ruby"
+plant "Kotlin SQL com \$var" app/Q.kt 'db.rawQuery("SELECT * FROM u WHERE id = $id", null)' 1 "Kotlin"
+plant "Dart catch vazio" lib/e.dart 'try { f(); } catch (e) {}' 1 "erro engolido"
+plant "Python except: pass" tool/e.py 'except ValueError: pass' 1 "Python"
+plant "PHP segue proibido" legado/y.php '<?php' 1 "PHP"
+plant "Elixir limpo passa" lib/ok.ex 'defmodule Ok do
+  def soma(a, b), do: a + b
+end' 0 "check-diff: OK"
+plant "teste Elixir isento" test/q_test.exs 'Repo.query!("SELECT #{x}")' 0
+
+echo "── VERMELHO: modo pre-commit (HEAD) não pode comparar HEAD com HEAD"
+new_repo; printf 'let a: any = 1\n' > staged.ts; git add -A
+out=$(bash "$HERE/check-diff.sh" HEAD 2>&1); expect "HEAD vê o que está staged" 1 $? "$out" "tipo silenciado"
+out=$(bash "$HERE/check-diff.sh" --cached 2>&1); expect "--cached idem" 1 $? "$out" "tipo silenciado"
+new_repo; printf 'package ok\n' > ok.go; git add -A
+out=$(bash "$HERE/check-diff.sh" HEAD 2>&1); expect "HEAD com staged limpo passa" 0 $? "$out"
+
 echo "── VERMELHO: tamanho de arquivo"
 new_repo; mkdir -p svc
 { echo 'package svc'; for i in $(seq 1 800); do echo "var v$i = $i"; done; } > svc/big.go; commit_feat

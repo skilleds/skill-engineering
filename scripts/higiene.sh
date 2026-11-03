@@ -18,7 +18,10 @@
 set -uo pipefail
 
 W=""; APPLY=0; KEEP=0; EXPIRE=""; DOCKER=0; ABOVE=""; LOG=""; ALLOW=()
-die() { echo "higiene: $*" >&2; exit 2; }
+die() { echo "higiene: $*" >&2; echo "uso: higiene.sh --help" >&2; exit 2; }
+uso() { # imprime o cabeçalho de documentação (linhas 2..fim dos comentários iniciais)
+  sed -n '2,/^set -/{/^set -/d;s/^# \{0,1\}//;p}' "${BASH_SOURCE[0]}"
+}
 while [ $# -gt 0 ]; do
   case "$1" in
     --workspace) W="${2:-}"; shift 2 ;;
@@ -29,6 +32,7 @@ while [ $# -gt 0 ]; do
     --log) LOG="${2:-}"; shift 2 ;;
     --docker) DOCKER=1; shift ;;
     --apply) APPLY=1; shift ;;
+    -h|--help) uso; exit 0 ;;
     *) die "argumento desconhecido: $1" ;;
   esac
 done

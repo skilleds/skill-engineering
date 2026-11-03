@@ -83,5 +83,13 @@ grep -q "volume rm $HEX" "$T/docker.calls" || fail "não removeu volume anônimo
 grep -q 'volume rm meu_banco_pgdata' "$T/docker.calls" && fail "removeu volume NOMEADO"
 if ! { grep -q 'builder prune' "$T/docker.calls" && grep -q 'container prune' "$T/docker.calls"; }; then fail "faltou prune de cache/containers"; fi
 grep -q 'system prune\|--volumes\|-a ' "$T/docker.calls" && fail "prune amplo demais (volumes/-a)"
+# --help/-h: exit 0 com uso completo; argumento desconhecido: exit 2 com mensagem de uso
+for h in --help -h; do
+  o="$(bash "$H" "$h" 2>&1)"; r=$?
+  [ "$r" -eq 0 ] || fail "$h rc=$r"
+  grep -q -- '--workspace' <<<"$o" && grep -q -- '--apply' <<<"$o" && grep -q 'NUNCA apaga' <<<"$o" || fail "$h sem uso completo"
+done
+o="$(bash "$H" --nao-existe 2>&1)"; r=$?
+[ "$r" -eq 2 ] && grep -q 'desconhecido' <<<"$o" && grep -q -- '--help' <<<"$o" || fail "argumento desconhecido sem mensagem de uso (rc=$r)"
 [ "$rc" -eq 0 ] && echo "higiene.test: OK"
 exit "$rc"
