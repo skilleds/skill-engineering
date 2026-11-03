@@ -1,4 +1,4 @@
-<!-- schematize-core v0.35.0 -->
+<!-- schematize-core v0.35.2 -->
 # Núcleo schematize (sempre ativo)
 
 Vale para toda sessão. `schematize-engineering` é a base da casa (agnóstica; linguagem por fit+ADR): aplique ao projetar, revisar ou codar, sem invocação.

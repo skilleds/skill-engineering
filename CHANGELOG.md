@@ -2,6 +2,10 @@
 
 Todas as mudanças relevantes deste pacote, no formato [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/),
 com versionamento [SemVer](https://semver.org/lang/pt-BR/).
+## [0.35.2] — 2026-11-03
+### Corrigido
+- `assets/CORE.md` ficou com o marcador `<!-- schematize-core v0.35.0 -->` na 0.35.1; o app detecta núcleo desatualizado por esse marcador e `core-md.test.sh` reprovava o gate final. Marcador alinhado.
+- Porquê: o release (`tools/release.mjs`) não tocava o marcador. Agora, na engineering, ele o atualiza junto com VERSION/skill.toml/SKILL.md e inclui `assets/CORE.md` no commit (self-test `tools/release-core.test.sh`).
 ## [0.35.1] — 2026-11-03
 ### Corrigido
 - `check-ritmo.sh`, `check-deploy-git.sh` e `check-external-effects.sh` citavam `references/orquestracao.md` cru; como são scripts herdados pelas filhas, o lint acusava ponteiro morto. Agora citam `schematize-engineering` → `references/orquestracao.md` explicitamente.
